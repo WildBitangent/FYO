@@ -84,7 +84,7 @@
     <ClCompile Include="Include\ImGUI\imgui_impl_win32.cpp" />
     <ClCompile Include="Include\ImGUI\imgui_widgets.cpp" />
     <ClCompile Include="Source\Camera.cpp" />
-    <ClCompile Include="Source\GraphicWrapper.cpp" />
+    <ClCompile Include="Source\D3D.cpp" />
     <ClCompile Include="Source\Input.cpp" />
     <ClCompile Include="Source\Logic.cpp" />
     <ClCompile Include="Source\main.cpp" />
@@ -96,7 +96,7 @@
   <ItemGroup>
     <ClInclude Include="Include\Camera.hpp" />
     <ClInclude Include="Include\Constants.hpp" />
-    <ClInclude Include="Include\GraphicWrapper.hpp" />
+    <ClInclude Include="Include\D3D.hpp" />
     <ClInclude Include="Include\ImGUI\imconfig.h" />
     <ClInclude Include="Include\ImGUI\imgui.h" />
     <ClInclude Include="Include\ImGUI\imgui_impl_dx11.h" />

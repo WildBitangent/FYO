@@ -12,7 +12,8 @@ struct Buffer
 struct Texture
 {
 	uni::Texure2D texture;
-	uni::ShaderResourceView view;
+	uni::ShaderResourceView srv;
+	uni::UnorderedAccessView uav;
 }; 
 
 template <typename T>

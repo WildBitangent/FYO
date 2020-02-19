@@ -1,6 +1,6 @@
 ﻿#include "Logic.hpp"
 #include "Message.hpp"
-#include "Renderer.hpp"
+#include "D3D.hpp"
 
 
 Logic::Logic()
@@ -11,7 +11,7 @@ Logic::Logic()
 	data->data = reinterpret_cast<> mImageModel.getVertexArray().data();
 	data->size = mImageModel.getVertexArray().size() * sizeof(mImageModel.getVertexArray()[0]);
 	
-	MessageBus::post({MessageID::REQUEST_ALLOC_BUFFER, )
+	D3D::getInstance().createBuffer(mImageModel.)
 
 	
 }

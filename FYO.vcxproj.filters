@@ -57,7 +57,7 @@
     <ClCompile Include="Source\Model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\GraphicWrapper.cpp">
+    <ClCompile Include="Source\D3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -119,7 +119,7 @@
     <ClInclude Include="Include\Model.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\GraphicWrapper.hpp">
+    <ClInclude Include="Include\D3D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
