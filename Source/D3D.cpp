@@ -33,7 +33,7 @@ uni::Buffer D3D::createBuffer(std::vector<T> data, size_t stride, UINT flags, UI
 }
 
 template <typename T>
-uni::Texure2D D3D::createTexture(std::vector<T> data, DirectX::XMINT2 resolution, 
+uni::Texure2D D3D::createTexture(std::vector<T> data, DirectX::XMUINT2 resolution, 
 	DXGI_FORMAT format, UINT bindFlags, UINT cpuFlags, UINT flags, D3D11_USAGE usage)
 {
 	uni::Texure2D texture;

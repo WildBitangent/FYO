@@ -18,6 +18,8 @@ public:
 	TextCoord& getTextCoordArray();
 	Texture& getTextureArray();
 
+	DirectX::XMUINT2 getTextureDimension() const;
+
 private:
 	void loadTexture(const std::string& path);
 	

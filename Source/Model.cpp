@@ -58,6 +58,11 @@ Model::Texture& Model::getTextureArray()
 	return mTexture;
 }
 
+DirectX::XMUINT2 Model::getTextureDimension() const
+{
+	return mTextureDimension;
+}
+
 void Model::loadTexture(const std::string& path)
 {
 	// todo need to prepend path
