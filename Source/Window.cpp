@@ -55,8 +55,11 @@ void Window::loop()
 	
 	auto timeStart = clock::now();
 
+	
+	Renderer& renderer = Renderer::getInstance();
+	renderer.init(mHwnd, {WIDTH, HEIGHT});
+
 	Logic gameLogic;
-	Renderer renderer(mHwnd, {WIDTH, HEIGHT});
 	
 	for (MSG msg;;)
 	{
@@ -74,12 +77,14 @@ void Window::loop()
 			auto deltaTime = currentTime - timeStart;
 			timeStart = currentTime;
 
-			auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(deltaTime).count();
-
+			// const auto count = std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
+			const auto count = std::chrono::duration<float>(deltaTime).count();
+			
 			gameLogic.update(count);
-			renderer.update(count);
+			// renderer.update(count);
 			
 			MessageBus::dispatch();
+			renderer.present();
 		}
 	}
 }

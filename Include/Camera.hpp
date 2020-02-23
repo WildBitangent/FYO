@@ -1,20 +1,19 @@
 ﻿#pragma once
 #include <DirectXMath.h>
+#include "D3D.hpp"
+#include "Message.hpp"
 
 
-class Camera // todo change
+class Camera : public Listener
 {
 public:
 	struct alignas(16) CameraBuffer
 	{
 		DirectX::XMVECTOR position = {1.f, 3.f, 8.0f};
-		// DirectX::XMVECTOR position = {-16.f, 6.f, 1.0f};
 		DirectX::XMVECTOR upperLeftCorner;
 		DirectX::XMVECTOR horizontal;
 		DirectX::XMVECTOR vertical;
 		DirectX::XMFLOAT2 pixelSize;
-		uint32_t iterationCounter = 0;
-		DirectX::XMFLOAT2 randomSeed;
 	};
 public:
 
@@ -23,10 +22,16 @@ public:
 	void updateResolution(size_t width, size_t height);
 	void update(float dt);
 
-	CameraBuffer* getBuffer();
+	void recieveMessage(Message message) override;
+
+	CameraBuffer* getBufferCPU();
+	Buffer& getBufferGPU();
 
 private:
-	CameraBuffer mCBuffer;
+	CameraBuffer mBufferCPU;
+	
+	Buffer mBufferGPU;
+	
 	DirectX::XMVECTOR mFront = {0.f, 0.f, 1.f}; 
 	DirectX::XMVECTOR mUp = {0.0f, 1.0f, 0.0f};
 	DirectX::XMVECTOR mLeft = {};

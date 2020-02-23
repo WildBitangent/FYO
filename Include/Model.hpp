@@ -9,14 +9,18 @@ class Model
 public:
 	using Vertices = std::vector<DirectX::XMFLOAT3A>;
 	using TextCoord = std::vector<DirectX::XMFLOAT2>;
+	using Normals = std::vector<DirectX::XMFLOAT3A>;
+	using Indices = std::vector<DirectX::XMUINT4>;
 	using Texture = std::vector<uint8_t>;
 	
 public:
 	Model(const std::string& path);
 
 	Vertices& getVertexArray();
+	Normals& getNormalArray();
 	TextCoord& getTextCoordArray();
-	Texture& getTextureArray();
+	Indices& getIndexArray();
+	Texture& getTexture();
 
 	DirectX::XMUINT2 getTextureDimension() const;
 
@@ -25,9 +29,9 @@ private:
 	
 private:
 	Vertices mVertexArray;
-	// std::vector<uint32_t> mIndexArray;
+	Normals mNormalArray;
+	Indices mIndexArray;
 	TextCoord mTextCoordArray;
-	// std::vector<DirectX::XMFLOAT3A> mNormalArray;
 
 	Texture mTexture;
 	DirectX::XMUINT2 mTextureDimension;

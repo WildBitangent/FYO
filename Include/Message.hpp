@@ -1,12 +1,13 @@
 ﻿#pragma once
 #include "RingBuffer.hpp"
-#include <memory>
+#include <vector>
 
 enum class MessageID : size_t
 {
 	DRAW,
+	DRAW_RT,
 	INPUT_MONITOR_KEY,
-	REQUEST_ALLOC_BUFFER,
+	UPDATE_CAMERA,
 };
 
 
@@ -17,8 +18,8 @@ struct Message
 	{
 		float dataf;
 		int datai;
-		std::unique_ptr<void*> datap;
 		void(*datafun)(void*);
+		void* datap;
 	};
 };
 
@@ -33,10 +34,12 @@ class MessageBus
 public:
 	static void post(const Message& msg);
 	static void dispatch();
+	static void registerListener(Listener* listener);
+	static void unregister(Listener* listener);
 	
 private:
 	RingBuffer<Message, 50> mBuffer;
-	std::vector<Listener> mListeners;
+	std::vector<Listener*> mListeners;
 	
 	static MessageBus mInstance;
 };

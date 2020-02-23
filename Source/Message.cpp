@@ -14,6 +14,25 @@ void MessageBus::dispatch()
 		const auto message = mInstance.mBuffer.pop();
 		
 		for (auto& listener : mInstance.mListeners)
-			listener.recieveMessage(message);
+			listener->recieveMessage(message);
+	}
+}
+
+void MessageBus::registerListener(Listener* listener)
+{
+	// to
+	mInstance.mListeners.emplace_back(listener);
+}
+
+void MessageBus::unregister(Listener* listener)
+{
+	for (size_t i = 0; i < mInstance.mListeners.size(); ++i)
+	{
+		if (mInstance.mListeners[i] == listener)
+		{
+			mInstance.mListeners[i] = mInstance.mListeners.back();
+			mInstance.mListeners.pop_back();
+			break;
+		}
 	}
 }

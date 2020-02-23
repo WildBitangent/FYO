@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <vector>
+#include <array>
 #include <cassert>
 
 template<typename A, int N>
@@ -14,7 +14,7 @@ public:
 
 	A pop()
 	{
-		assert(mHead == mTail);
+		assert(mHead != mTail);
 
 		auto element = mBuffer[mTail];
 		mTail = ++mTail % N;

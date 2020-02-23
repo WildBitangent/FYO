@@ -19,6 +19,15 @@
     <Filter Include="3rd party\ImGUI">
       <UniqueIdentifier>{a9926665-5622-4d07-bf0f-c4ef7c8f98a5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{840833d8-62dc-4ecf-a28d-ca7ad5f61f42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd party\Tinyobjloader">
+      <UniqueIdentifier>{59546d9f-8c49-42ff-b5ea-1964b85ddafc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rd party\LodePNG">
+      <UniqueIdentifier>{2760d433-85d5-483a-b699-1f7cba95d784}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera.cpp">
@@ -57,8 +66,14 @@
     <ClCompile Include="Source\Model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Include\ImGUI\imgui_draw.cpp">
+      <Filter>3rd party\ImGUI</Filter>
+    </ClCompile>
     <ClCompile Include="Source\D3D.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\lodepng\lodepng.cpp">
+      <Filter>3rd party\LodePNG</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -122,5 +137,25 @@
     <ClInclude Include="Include\D3D.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\D3D.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\tinyobjloader\tiny_obj_loader.h">
+      <Filter>3rd party\Tinyobjloader</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\lodepng\lodepng.h">
+      <Filter>3rd party\LodePNG</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Assets\Shaders\pixel.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Assets\Shaders\vertex.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Assets\Shaders\raytrace.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

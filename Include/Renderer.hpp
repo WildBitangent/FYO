@@ -10,35 +10,26 @@
 #include <string>
 
 
-class Renderer /*: public Listener*/
+class Renderer : public Listener
 {
 	using Resolution = DirectX::XMUINT2;
 public:
+	Renderer() = default;
 	Renderer(Renderer&) = delete;
 	Renderer(Renderer&&) = delete;
 	Renderer& operator=(Renderer&) = delete;
 	Renderer& operator=(Renderer&&) = delete;
 
+	static Renderer& getInstance();
+
 	// virtual ~Renderer() = default;
-	// void recieveMessage(Message message) override;
+	void recieveMessage(Message message) override;
 	void init(HWND hwnd, Resolution resolution);
 
-	template<typename T>
-	static T createShader(const std::wstring& path, const std::string& target);
 
-	template<typename T>
-	static Buffer createBuffer(std::vector<T> data, D3D11_BUFFER_DESC descriptor);
-
-	
 	void update(float dt);
-	void draw();
-
-
-
-private:
-	void initScene();
-	
-	void reloadShader(); // TODO rewrite
+	void draw(RayTraceStruct& rayStruct);
+	void present();
 
 private:
 	// Camera mCamera;
@@ -63,9 +54,9 @@ private:
 	
 	uni::InputLayout mVertexLayout;
 
-	uni::Texure2D mRenderTexture;
-	uni::ShaderResourceView mRenderTextureSRV;
-	uni::UnorderedAccessView mRenderTextureUAV;
+	// uni::Texure2D mRenderTexture;
+	// uni::ShaderResourceView mRenderTextureSRV;
+	// uni::UnorderedAccessView mRenderTextureUAV;
 	
 	// Buffer mLightBuffer;
 	//
@@ -82,6 +73,4 @@ private:
 	// uni::ShaderResourceView mTexture;
 	//
 	// friend class GUI;
-
-	static Renderer mInstance;
 };

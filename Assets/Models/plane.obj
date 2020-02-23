@@ -1,6 +1,6 @@
 # Blender v2.80 (sub 75) OBJ File: ''
 # www.blender.org
-mtllib plane.mtl
+mtllib Assets/Models/plane.mtl
 o Plane_Plane.001
 v -4.525319 8.525318 -10.000000
 v 4.525319 8.525318 -10.000000
