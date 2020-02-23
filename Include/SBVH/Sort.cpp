@@ -25,7 +25,7 @@
 *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "Nvidia-SBVH/Sort.h"
+#include "SBVH/Sort.h"
 
 #define FW_ASSERT(X) ((void)0)
 #define QSORT_STACK_SIZE    32

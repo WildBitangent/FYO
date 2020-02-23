@@ -57,7 +57,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PreprocessorDefinitions>TINYOBJLOADER_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;TINYOBJLOADER_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -73,7 +73,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PreprocessorDefinitions>TINYOBJLOADER_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NOMINMAX;TINYOBJLOADER_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -89,14 +89,32 @@
     <ClCompile Include="Include\ImGUI\imgui_impl_win32.cpp" />
     <ClCompile Include="Include\ImGUI\imgui_widgets.cpp" />
     <ClCompile Include="Include\lodepng\lodepng.cpp" />
+    <ClCompile Include="Include\SBVH\BVH.cpp" />
+    <ClCompile Include="Include\SBVH\BVHNode.cpp" />
+    <ClCompile Include="Include\SBVH\Sort.cpp" />
+    <ClCompile Include="Include\SBVH\SplitBVHBuilder.cpp" />
+    <ClCompile Include="Include\SBVH\Timer.cpp" />
+    <ClCompile Include="Include\SBVH\Util.cpp" />
+    <ClCompile Include="Source\BVHWrapper.cpp" />
     <ClCompile Include="Source\Camera.cpp" />
+    <ClInclude Include="Include\BVHWrapper.hpp" />
     <ClInclude Include="Include\lodepng\lodepng.h" />
+    <ClInclude Include="Include\SBVH\Array.h" />
+    <ClInclude Include="Include\SBVH\BVH.h" />
+    <ClInclude Include="Include\SBVH\BVHNode.h" />
+    <ClInclude Include="Include\SBVH\GPUScene.h" />
+    <ClInclude Include="Include\SBVH\linear_math.h" />
+    <ClInclude Include="Include\SBVH\Sort.h" />
+    <ClInclude Include="Include\SBVH\SplitBVHBuilder.h" />
+    <ClInclude Include="Include\SBVH\Timer.h" />
+    <ClInclude Include="Include\SBVH\Util.h" />
     <ClInclude Include="Include\tinyobjloader\tiny_obj_loader.h" />
     <ClInclude Include="Source\D3D.inl">
       <FileType>Document</FileType>
     </ClInclude>
     <ClCompile Include="Source\D3D.cpp" />
     <ClCompile Include="Source\Input.cpp" />
+    <ClCompile Include="Source\LensDatabase.cpp" />
     <ClCompile Include="Source\Logic.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Message.cpp" />
@@ -145,6 +163,9 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Include\LensDatabase.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

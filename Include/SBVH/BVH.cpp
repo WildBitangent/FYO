@@ -27,8 +27,8 @@
 
 #include <cstdio>
 
-#include "Nvidia-SBVH/BVH.h"
-#include "Nvidia-SBVH/SplitBVHBuilder.h"
+#include "SBVH/BVH.h"
+#include "SBVH/SplitBVHBuilder.h"
 
 
 BVH::BVH(GPUScene* scene, const Platform& platform, const BuildParams& params)

@@ -25,7 +25,7 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Nvidia-SBVH/Timer.h"
+#include "SBVH/Timer.h"
 #include <iostream>
 #include <windows.h>
 #include <algorithm>

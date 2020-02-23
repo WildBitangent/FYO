@@ -1,4 +1,4 @@
-#include "Nvidia-SBVH/Util.h"
+#include "SBVH/Util.h"
 
 // this hash function calculates a new random number generator seed for each frame, based on framenumber
 unsigned int WangHash(unsigned int a)

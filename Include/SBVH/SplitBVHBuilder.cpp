@@ -29,8 +29,8 @@
 // project page: http://www.nvidia.com/object/nvidia_research_pub_012.html
 // direct link: http://www.nvidia.com/docs/IO/77714/sbvh.pdf
 
-#include "Nvidia-SBVH/Sort.h"
-#include "Nvidia-SBVH/SplitBVHBuilder.h"
+#include "SBVH/Sort.h"
+#include "SBVH/SplitBVHBuilder.h"
 
 SplitBVHBuilder::SplitBVHBuilder(BVH& bvh, const BVH::BuildParams& params)
 	: m_bvh(bvh),

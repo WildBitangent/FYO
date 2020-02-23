@@ -8,6 +8,7 @@
 struct RayTraceStruct
 {
 	Buffer& camera;
+	Buffer& bvhtree;
 	
 	Buffer& planeVertexBuffer;
 	Buffer& planeTexcoordBuffer;

@@ -36,7 +36,9 @@ public:
 	struct Triangle
 	{
 		Vec3i       vertices;   //3 vertex indices of triangle
-    Triangle() : vertices(Vec3i(0, 0, 0)) {};
+		Vec3i		normals;
+		Triangle() : vertices(Vec3i(0, 0, 0)) {}
+		Triangle(Vec3i i, Vec3i n) : vertices(i), normals(n) {}
 	};
 
 public:

@@ -1,12 +1,9 @@
 ﻿#pragma once
 #include <vector>
 #include <DirectXMath.h>
-#include "Nvidia-SBVH/Array.h"
+#include "SBVH/Array.h"
 
-struct aiMesh;
-struct aiScene;
-
-
+struct LensTransform;
 
 class BVHWrapper
 {
@@ -18,39 +15,20 @@ public:
 		int leftIndex;
 		int rightIndex;
 		int isLeaf;
-		
 	}; 
-
-	struct alignas(16) Triangle
-	{
-		DirectX::XMINT3 indices;
-		uint32_t index; // triangle index (for material)
-	};
-	
-	struct alignas(16) TriangleProperties
-	{
-		DirectX::XMFLOAT3A normal;
-		DirectX::XMFLOAT2 texCoord;
-		uint32_t materialID;
-	};
 	
 public:
 	BVHWrapper() = default;
-	BVHWrapper(const aiScene* scene);
+	BVHWrapper(const std::vector<LensTransform>& lens);
 
+	std::vector<BVHNode>& getTree();
+	std::vector<DirectX::XMUINT4>& getIndices();
+	std::vector<DirectX::XMFLOAT3A>& getNormals();
+	std::vector<DirectX::XMFLOAT3A>& getVertices();
 	
-	
-
-
 private:
-	void buildSBVH();
-
-private:
-	const aiScene* mScene;
 	std::vector<BVHNode> mGPUTree;
-	std::vector<Triangle> mIndices;
-	std::vector<TriangleProperties> mTriangleProperties;
-    Array<Vec3f> mVertices;
-
-	friend class Scene; // todo lazy to make getters/setters :'(
+	std::vector<DirectX::XMUINT4> mIndices;
+	std::vector<DirectX::XMFLOAT3A> mNormals;
+    std::vector<DirectX::XMFLOAT3A> mVertices;
 };

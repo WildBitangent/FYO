@@ -130,6 +130,7 @@ void Renderer::draw(RayTraceStruct& rayStruct)
 	};
 	
 	std::vector<ID3D11ShaderResourceView*> SRVs = {
+		rayStruct.bvhtree.srv,
 		rayStruct.planeVertexBuffer.srv,
 		rayStruct.planeTexcoordBuffer.srv,
 		rayStruct.planeIndexBuffer.srv,

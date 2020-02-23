@@ -1,53 +1,45 @@
 ﻿#include "BVHWrapper.hpp"
-#include "Nvidia-SBVH/BVH.h"
-#include "assimp/scene.h"
+#include "SBVH/BVH.h"
 #include <stack>
+#include "LensDatabase.hpp"
+
+// todo lens database
 
 
-BVHWrapper::BVHWrapper(const aiScene* scene)
-	: mScene(scene)
-{
-	buildSBVH();
-}
-
-void BVHWrapper::buildSBVH()
+BVHWrapper::BVHWrapper(const std::vector<LensTransform>& lens)
 {
 	Array<GPUScene::Triangle> triangles;
-	
-	for (size_t i = 0; i < mScene->mNumMeshes; ++i)
+	Array<Vec3f> vertices;
+
+	for (const auto& l : lens)
 	{
-		auto& mesh = *mScene->mMeshes[i];
+		const auto offset = vertices.getSize();
 
-		// processing only triangles (means points and lines are not rendered)
-		if (~mesh.mPrimitiveTypes & aiPrimitiveType_TRIANGLE) 
-			continue;
+		for (auto v : l.model.getVertexArray())
+		{
+			XMStoreFloat3A(&v, XMVector3Transform(XMLoadFloat3A(&v), l.transform));
+			vertices.add(reinterpret_cast<Vec3f&>(v));
+			mVertices.emplace_back(v);
+		}
 		
-		// insert vertices
-		const auto offset = mVertices.getSize();
-		mVertices.add(reinterpret_cast<Vec3f*>(mesh.mVertices), mesh.mNumVertices);
+		for (auto& n : l.model.getNormalArray())
+			mNormals.emplace_back(n);
 
-		// triangle properties
-		for (size_t n = 0; n < mesh.mNumVertices; n++)
+		for (size_t i = 0; i < l.model.getIndexArray().size() / 3; ++i)
 		{
-			mTriangleProperties.emplace_back(TriangleProperties{
-				{mesh.mNormals[n].x, mesh.mNormals[n].y, mesh.mNormals[n].z},
-				(mesh.HasTextureCoords(0) ? *reinterpret_cast<DirectX::XMFLOAT2*>(&mesh.mTextureCoords[0][n]) : DirectX::XMFLOAT2{ 0, 0 }),
-				mesh.mMaterialIndex
-			});
-		}
+			auto& vertex = l.model.getIndexArray()[i];
+			auto& normal = l.model.getIndexArray()[i + l.model.getIndexArray().size() / 3];
+			Vec3i vi(vertex.x + offset, vertex.y + offset, vertex.z + offset);
+			Vec3i ni(normal.x + offset, normal.y + offset, normal.z + offset);
 
-		// triangles (indices)		
-		for (size_t n = 0; n < mesh.mNumFaces; ++n)
-		{
-			auto& f = mesh.mFaces[n];
-			
-			Vec3i triangle(f.mIndices[0] + offset, f.mIndices[1] + offset, f.mIndices[2] + offset);
-			triangles.add(*reinterpret_cast<GPUScene::Triangle*>(&triangle));
+			triangles.add(GPUScene::Triangle(vi, ni));
 		}
+		
+		// for (auto& i : l.model.getIndexArray())
+		// 	triangles.add(GPUScene::Triangle(Vec3i(i.x + offset, i.y + offset, i.z + offset)));
 	}
-
 	
-    GPUScene scene = GPUScene(triangles.getSize(), mVertices.getSize(), triangles, mVertices);
+    GPUScene scene = GPUScene(triangles.getSize(), vertices.getSize(), triangles, vertices);
 	
    	const Platform defaultPlatform;
 	const BVH::BuildParams defaultParams;
@@ -56,6 +48,7 @@ void BVHWrapper::buildSBVH()
 	std::stack<std::pair<::BVHNode*, size_t>> stack{ { {bvh.getRoot(), 0} } };
 	mGPUTree.resize(bvh.getNumNodes());
 
+	std::vector<DirectX::XMUINT4> normalIndices;
 	for (size_t nodeIndex = 0; !stack.empty(); )
 	{
 		auto [root, currentIndex] = stack.top(); stack.pop();
@@ -74,12 +67,11 @@ void BVHWrapper::buildSBVH()
 			node.rightIndex = start + leaf->m_hi - leaf->m_lo;
 			node.isLeaf = true;
 
-			// join vertex indices and triangle id (used for material)
 			for (auto i = leaf->m_lo; i < leaf->m_hi; i++)
 			{
-				const uint32_t index = bvh.getTriIndices()[i];
-				const auto& indices = bvh.getScene()->getTriangle(index).vertices;
-				mIndices.emplace_back(Triangle{{indices.x, indices.y, indices.z}, mTriangleProperties[indices.x].materialID }); // TODO is matID right?
+				auto& triangle = bvh.getScene()->getTriangle(bvh.getTriIndices()[i]);
+				mIndices.emplace_back(reinterpret_cast<const uint32_t*>(&triangle.vertices));
+				normalIndices.emplace_back(reinterpret_cast<const uint32_t*>(&triangle.normals));
 			}
 		}
 		else
@@ -93,5 +85,26 @@ void BVHWrapper::buildSBVH()
 
 		mGPUTree.emplace_back(node);
 	}
+
+	mIndices.insert(mIndices.end(), normalIndices.begin(), normalIndices.end());
 }
 
+std::vector<BVHWrapper::BVHNode>& BVHWrapper::getTree()
+{
+	return mGPUTree;
+}
+
+std::vector<DirectX::XMUINT4>& BVHWrapper::getIndices()
+{
+	return mIndices;
+}
+
+std::vector<DirectX::XMFLOAT3A>& BVHWrapper::getNormals()
+{
+	return mNormals;
+}
+
+std::vector<DirectX::XMFLOAT3A>& BVHWrapper::getVertices()
+{
+	return mVertices;
+}

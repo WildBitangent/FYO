@@ -25,8 +25,8 @@
 *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "Nvidia-SBVH/Array.h"
-#include "Nvidia-SBVH/BVHNode.h"
+#include "SBVH/Array.h"
+#include "SBVH/BVHNode.h"
 
 
 int BVHNode::getSubtreeSize(BVH_STAT stat) const  // recursively counts some type of nodes (either leafnodes, innernodes, childnodes) or unmber of triangles

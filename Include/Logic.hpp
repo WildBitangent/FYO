@@ -3,8 +3,7 @@
 #include "Model.hpp"
 #include "D3D.hpp"
 #include "Message.hpp"
-
-class Renderer;
+#include "BVHWrapper.hpp"
 
 struct alignas(16) ConstantBuffer
 {
@@ -27,10 +26,11 @@ private:
 	
 private:
 	Camera mCamera;
-	
-	Model mImageModel;
-	Model mLensModel;
 
+	Model mImageModel;
+
+	Buffer mBVHBuffer;
+	
 	Buffer mLensVertexBuffer;
 	Buffer mLensNormalBuffer;
 	Buffer mLensIndexBuffer;

@@ -28,6 +28,9 @@
     <Filter Include="3rd party\LodePNG">
       <UniqueIdentifier>{2760d433-85d5-483a-b699-1f7cba95d784}</UniqueIdentifier>
     </Filter>
+    <Filter Include="3rd party\SBVH">
+      <UniqueIdentifier>{775c03f0-5331-4167-b6d1-e39d62a4c00f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Camera.cpp">
@@ -74,6 +77,30 @@
     </ClCompile>
     <ClCompile Include="Include\lodepng\lodepng.cpp">
       <Filter>3rd party\LodePNG</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\BVHWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\SBVH\BVH.cpp">
+      <Filter>3rd party\SBVH</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\SBVH\BVHNode.cpp">
+      <Filter>3rd party\SBVH</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\SBVH\Sort.cpp">
+      <Filter>3rd party\SBVH</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\SBVH\SplitBVHBuilder.cpp">
+      <Filter>3rd party\SBVH</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\SBVH\Timer.cpp">
+      <Filter>3rd party\SBVH</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\SBVH\Util.cpp">
+      <Filter>3rd party\SBVH</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\LensDatabase.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -146,6 +173,36 @@
     <ClInclude Include="Include\lodepng\lodepng.h">
       <Filter>3rd party\LodePNG</Filter>
     </ClInclude>
+    <ClInclude Include="Include\BVHWrapper.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\Array.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\BVH.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\BVHNode.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\GPUScene.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\linear_math.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\Sort.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\SplitBVHBuilder.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\Timer.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SBVH\Util.h">
+      <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\Shaders\pixel.hlsl">
@@ -157,5 +214,10 @@
     <FxCompile Include="Assets\Shaders\raytrace.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Include\LensDatabase.hpp">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
