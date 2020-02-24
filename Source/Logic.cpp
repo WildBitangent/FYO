@@ -28,7 +28,7 @@ Logic::Logic()
 
 	ConstantBuffer constants{
 		mImageModel.getIndexArray().size() / 3,
-		bvh.getIndices().size() / 3
+		bvh.getIndices().size() / 2
 	};
 	
 	mConstantBuffer.buffer = D3D::getInstance().createBuffer(constants, D3D11_BIND_CONSTANT_BUFFER);

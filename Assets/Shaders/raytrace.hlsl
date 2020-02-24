@@ -2,7 +2,7 @@
 #define threadCountY 8
 #define threadCount threadCountX * threadCountY
 #define FLT_MAX 3.402823466e+38
-#define EPSILON 1e-4
+#define EPSILON 1e-5
 #define STACKSIZE 16
 
 struct Ray

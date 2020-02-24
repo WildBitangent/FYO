@@ -3,8 +3,6 @@
 #include <stack>
 #include "LensDatabase.hpp"
 
-// todo lens database
-
 
 BVHWrapper::BVHWrapper(const std::vector<LensTransform>& lens)
 {
