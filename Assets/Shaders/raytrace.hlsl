@@ -34,6 +34,7 @@ struct State
 	float3 hitPoint;
 	float3 baryCoord;
 	uint triangleID;
+	uint glassHits;
 };
 
 cbuffer Cam : register(b0)
@@ -83,6 +84,38 @@ inline Ray getPrimaryRay(float2 coord)
 	return Ray::create(cam.pos, normalize(cam.ulc + uv.x * cam.horizontal - uv.y * cam.vertical));
 }
 
+float3 schlickFresnel(float3 r0, float theta)
+{
+	float m = saturate(1.0 - theta);
+	float m2 = m * m;
+	return r0 - (1 - r0) * m2 * m2 * m;
+}
+
+float3 glassSample(in float3 rayDirection, in float3 normal)
+{
+	float3 normalF = dot(normal, rayDirection) <= 0.0 ? normal : normal * -1.0; // todo wtf is this
+
+	// refraction
+	float n1 = 1.0;
+	float n2 = lensIor;
+
+	//float r0 = (n1 - n2) / (n1 + n2);
+	//r0 *= r0;
+	
+	//float theta = dot(-state.ray.direction, normal);
+	//float probability = schlickFresnel(r0, theta);
+
+	// decide where do we go, inside or outside
+	float refractFactor = dot(normal, normalF) > 0.0 ? (n1 / n2) : (n2 / n1);
+	float3 transDirection = normalize(refract(rayDirection, normalF, refractFactor));
+	
+	//float cos2t = 1.0 - refractFactor * refractFactor * (1.0 - theta * theta);
+	//if (cos2t < 0.0 || rand() < probability)
+	//	return normalize(reflect(state.ray.direction, normal));
+		
+	return transDirection;
+}
+
 bool rayTriangleIntersection(inout State state, float3 v0, float3 v1, float3 v2, inout float lastT)
 {
 	float3 e1 = v1 - v0;
@@ -125,7 +158,7 @@ bool rayTriangleIntersection(inout State state, float3 v0, float3 v1, float3 v2,
 	return false;
 }
 
-float rayAABBIntersection(float3 minbox, float3 maxbox, Ray r)
+bool rayAABBIntersection(Ray r, float3 minbox, float3 maxbox, out float t1, out float t2)
 {
 	float3 invdir = 1.0 / r.direction;
 
@@ -135,83 +168,131 @@ float rayAABBIntersection(float3 minbox, float3 maxbox, Ray r)
 	float3 tmax = max(f, n);
 	float3 tmin = min(f, n);
 
-	float t1 = min(tmax.x, min(tmax.y, tmax.z));
-	float t0 = max(tmin.x, max(tmin.y, tmin.z));
+	t2 = min(tmax.x, min(tmax.y, tmax.z));
+	t1 = max(tmin.x, max(tmin.y, tmin.z));
 
+	return t2 > t1;
+	
 	//return t0 <= t1 && t1 >= 0.0;
-	return (t1 >= t0) ? (t0 > 0.f ? t0 : t1) : -1.0;
+	//return (t1 >= t0) ? (t0 > 0.f ? t0 : t1) : -1.0;
 }
 
-float rayBVHIntersection(inout State state)
+bool asdasd(inout State state, float3 center, float radius, out float t1, out float t2)
 {
-	int stack[STACKSIZE];
-	uint ptr = 0;
-	stack[ptr++] = -1;
-	float distance = FLT_MAX;
+	float3 sphereDir = center - state.ray.origin;
+	float tca = dot(sphereDir, state.ray.direction);
+	float d2 = dot(sphereDir, sphereDir) - tca * tca;
+	float radius2 = radius * radius;
+	
+	if (d2 > radius2)
+		return false;
+	
+	float thc = sqrt(radius2 - d2);
+	t1 = tca - thc;
+	t2 = tca + thc;
+	
+	return true;
+}
 
-	// early test
-	BVHNode node = tree[0];
-	if (rayAABBIntersection(node.min, node.max, state.ray) > 0.0)
+void sphereBiconvex(inout State state, in float3 center1, in float3 center2, float radius, float3 minbox, float3 maxbox)
+{
+	float t1, t2, t3, t4, t5, t6;
+	if (!asdasd(state, center1, radius, t1, t2) || !asdasd(state, center2, radius, t3, t4) || !rayAABBIntersection(state.ray, minbox, maxbox, t5, t6))
+		return;
+	
+	t1 = (t1 < t2) ? t1 : t2;
+	t3 = (t3 < t4) ? t3 : t4;
+	
+	//t1 = (t1 > t3) ? t1 : t3;
+	
+	float3 center = center1;
+	if (t1 < t3)
 	{
-		for (int idx = 0; idx > -1;)
-		{
-			node = tree[idx];
-
-			if (node.isLeaf)
-			{
-				for (uint i = node.leftIndex; i < node.rightIndex; i++)
-				{
-					uint3 idx = lensIndices[i];
-					float3 v0 = lensVertices[idx.x];
-					float3 v1 = lensVertices[idx.y];
-					float3 v2 = lensVertices[idx.z];
-
-					if (rayTriangleIntersection(state, v0, v1, v2, distance))
-						state.triangleID = i;
-				}
-			}
-			else
-			{
-				BVHNode left = tree[node.leftIndex];
-				BVHNode right = tree[node.rightIndex];
-
-				float leftHit = rayAABBIntersection(left.min, left.max, state.ray);
-				float rightHit = rayAABBIntersection(right.min, right.max, state.ray);
-
-				if (leftHit > 0.0 && rightHit > 0.0)
-				{
-					int deferred;
-
-					if (leftHit > rightHit)
-					{
-						idx = node.rightIndex;
-						deferred = node.leftIndex;
-					}
-					else
-					{
-						idx = node.leftIndex;
-						deferred = node.rightIndex;
-					}
-
-					stack[ptr++] = deferred;
-					continue;
-				}
-				else if (leftHit > 0.0)
-				{
-					idx = node.leftIndex;
-					continue;
-				}
-				else if (rightHit > 0.0)
-				{
-					idx = node.rightIndex;
-					continue;
-				}
-			}
-			idx = stack[--ptr];
-		}
+		t1 = t3;
+		center = center2;
 	}
+	
+	if (t1 < 0.f)
+		return;
+ 
+	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
+	float3 newDirection = glassSample(state.ray.direction, normalize(state.hitPoint - center));
+	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
+	state.glassHits++;
+	
+	// inside glass
+	asdasd(state, center1, radius, t1, t2);
+	asdasd(state, center2, radius, t3, t4);
+	
+	t1 = (t1 > t2) ? t1 : t2;
+	t3 = (t3 > t4) ? t3 : t4;
+	
+	//t1 = (t1 > t3) ? t1 : t3;
+	
+	center = center1;
+	if (t1 > t3)
+	{
+		t1 = t3;
+		center = center2;
+	}
+	
+	//if (t1 < 0.f)
+	//	return;
+ 
+	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
+	newDirection = glassSample(state.ray.direction, normalize(state.hitPoint - center));
+	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
+}
 
-	return distance;
+void sphereBiconcave(inout State state, in float3 center1, in float3 center2, float radius, float3 minbox, float3 maxbox)
+{
+	float t1, t2, t3, t4, t5, t6;
+	bool box = rayAABBIntersection(state.ray, minbox, maxbox, t5, t6);
+	if (!asdasd(state, center1, radius, t1, t2) || !asdasd(state, center2, radius, t3, t4) || !box)
+		return;
+	
+	t1 = (t1 > t2) ? t1 : t2;
+	t3 = (t3 > t4) ? t3 : t4;
+	
+	//t1 = (t1 > t3) ? t1 : t3;
+	
+	float3 center = center1;
+	if (t1 > t3)
+	{
+		t1 = t3;
+		center = center2;
+	}
+	
+	//if (t1 < 0.f && !box)
+	//	return;
+ 
+	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
+	float3 newDirection = glassSample(state.ray.direction, normalize(state.hitPoint - center));
+	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
+	state.glassHits++;
+	
+	// inside glass
+	asdasd(state, center1, radius, t1, t2);
+	asdasd(state, center2, radius, t3, t4);
+	
+	t1 = (t1 < t2) ? t1 : t2;
+	t3 = (t3 < t4) ? t3 : t4;
+	
+	//t1 = (t1 > t3) ? t1 : t3;
+	
+	center = center1;
+	if (t1 < t3)
+	{
+		t1 = t3;
+		center = center2;
+	}
+	
+	//if (t1 < 0.f)
+	//	return;
+ 
+	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
+	newDirection = glassSample(state.ray.direction, normalize(state.hitPoint - center));
+	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
 }
 
 float4 textureTriangle(float3 baryCoord, in uint index)
@@ -227,38 +308,6 @@ float4 textureTriangle(float3 baryCoord, in uint index)
 	return planeTexture.SampleLevel(samplerState, texCoord, 0);
 }
 
-float3 schlickFresnel(float3 r0, float theta)
-{
-	float m = saturate(1.0 - theta);
-	float m2 = m * m;
-	return r0 - (1 - r0) * m2 * m2 * m;
-}
-
-float3 glassSample(in float3 rayDirection, in float3 normal)
-{
-	float3 normalF = dot(normal, rayDirection) <= 0.0 ? normal : normal * -1.0; // todo wtf is this
-
-	// refraction
-	float n1 = 1.0;
-	float n2 = lensIor;
-
-	//float r0 = (n1 - n2) / (n1 + n2);
-	//r0 *= r0;
-	
-	//float theta = dot(-state.ray.direction, normal);
-	//float probability = schlickFresnel(r0, theta);
-
-	// decide where do we go, inside or outside
-	float refractFactor = dot(normal, normalF) > 0.0 ? (n1 / n2) : (n2 / n1); 
-	float3 transDirection = normalize(refract(rayDirection, normalF, refractFactor));
-	
-	//float cos2t = 1.0 - refractFactor * refractFactor * (1.0 - theta * theta);
-	//if (cos2t < 0.0 || rand() < probability)
-	//	return normalize(reflect(state.ray.direction, normal));
-        
-	return transDirection;
-}
-
 [numthreads(threadCountX, threadCountY, 1)]
 void main(uint3 gid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
 {
@@ -267,22 +316,45 @@ void main(uint3 gid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
 	state.hitPoint = float3(FLT_MAX, FLT_MAX, FLT_MAX);
 	state.baryCoord = float3(0, 0, 0);
 	state.triangleID = 0;
+	state.glassHits = 0;
 	
-	bool glassHit = false;
 	float4 color = float4(state.ray.direction.x, 1.0, 0.0, 1.0);
 	
-	while (rayBVHIntersection(state) < FLT_MAX)
+	sphereBiconcave(state, float3(0, 4, -10.5), float3(0, 4, 10.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
+	//sphereBiconvex(state, float3(0, 4, -8.5), float3(0, 4, 8.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
+	
+	for (uint i = 0; i < nTrianglesPlane; i++)
 	{
-		glassHit = true;
-		uint3 idx = lensIndices[state.triangleID + nTrianglesLens];
-		float3 n0 = lensNormals[idx.x];
-		float3 n1 = lensNormals[idx.y];
-		float3 n2 = lensNormals[idx.z];
-
-		float3 normal = n0 * state.baryCoord.x + n1 * state.baryCoord.y + n2 * state.baryCoord.z;
-		float3 newDirection = glassSample(state.ray.direction, normal);
-		state.ray = Ray::create(state.hitPoint + newDirection * 1e-8, newDirection);
+		float lastHit = FLT_MAX;
+		uint3 idx = planeIndices[i];
+		
+		rayTriangleIntersection(state, planeVertices[idx.x].xyz, planeVertices[idx.y].xyz, planeVertices[idx.z].xyz, lastHit);
+			
+		if (lastHit < FLT_MAX)
+		{
+			color = textureTriangle(state.baryCoord, i);
+			break;
+		}
 	}
+	
+	color *= pow(0.8, state.glassHits);
+		
+	output[gid.xy] = color;
+	//output[gid.xy] = float4(0, 0, 0, 0);
+}
+
+	//while (rayBVHIntersection(state) < FLT_MAX)
+	//{
+	//	glassHit = true;
+	//	uint3 idx = lensIndices[state.triangleID + nTrianglesLens];
+	//	float3 n0 = lensNormals[idx.x];
+	//	float3 n1 = lensNormals[idx.y];
+	//	float3 n2 = lensNormals[idx.z];
+
+	//	float3 normal = n0 * state.baryCoord.x + n1 * state.baryCoord.y + n2 * state.baryCoord.z;
+	//	float3 newDirection = glassSample(state.ray.direction, normal);
+	//	state.ray = Ray::create(state.hitPoint + newDirection * 1e-8, newDirection);
+	//}
 	
 	
 	
@@ -313,23 +385,16 @@ void main(uint3 gid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
 	//	}
 	//}
 	
-	for (uint i = 0; i < nTrianglesPlane; i++)
-	{
-		float lastHit = FLT_MAX;
-		uint3 idx = planeIndices[i];
+	//float3 normal;
+	//float lastHit = FLT_MAX;
+	//if (raySphereIntersection(state, normal, float3(0, 0, 0), 2, lastHit))
+	//{
+	//	float3 newDirection = glassSample(state.ray.direction, normal);
+	//	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
 		
-		rayTriangleIntersection(state, planeVertices[idx.x].xyz, planeVertices[idx.y].xyz, planeVertices[idx.z].xyz, lastHit);
-			
-		if (lastHit < FLT_MAX)
-		{
-			color = textureTriangle(state.baryCoord, i);
-			break;
-		}
-	}
-	
-	if (glassHit)
-		color *= 0.8;
-		
-	output[gid.xy] = color;
-	//output[gid.xy] = float4(0, 0, 0, 0);
-}
+	//	if (raySphereIntersection(state, normal, float3(0, 0, 0), 5, lastHit))
+	//	{
+	//		float3 newDirection = glassSample(state.ray.direction, normal);
+	//		state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
+	//	}
+	//}

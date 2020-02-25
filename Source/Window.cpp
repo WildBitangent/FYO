@@ -75,16 +75,20 @@ void Window::loop()
 		{
 			auto currentTime = clock::now();
 			auto deltaTime = currentTime - timeStart;
-			timeStart = currentTime;
 
-			// const auto count = std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
-			const auto count = std::chrono::duration<float>(deltaTime).count();
-			
-			gameLogic.update(count);
-			// renderer.update(count);
-			
-			MessageBus::dispatch();
-			renderer.present();
+			if (std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime).count() > 2)
+			{
+				timeStart = currentTime;
+
+				// const auto count = std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime);
+				const auto count = std::chrono::duration<float>(deltaTime).count();
+				
+				gameLogic.update(count);
+				// renderer.update(count);
+				
+				MessageBus::dispatch();
+				renderer.present();
+			}
 		}
 	}
 }

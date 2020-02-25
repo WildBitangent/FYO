@@ -27,6 +27,7 @@
 
 #pragma once
 #include <cmath>
+#include <algorithm>
 #include "linear_math.h"
 #include <string.h>
 #include "Util.h"
