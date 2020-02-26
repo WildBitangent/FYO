@@ -247,8 +247,10 @@ void sphereBiconvex(inout State state, in float3 center1, in float3 center2, flo
 void sphereBiconcave(inout State state, in float3 center1, in float3 center2, float radius, float3 minbox, float3 maxbox)
 {
 	float t1, t2, t3, t4, t5, t6;
+	asdasd(state, center1, radius, t1, t2);
+	asdasd(state, center2, radius, t3, t4);
 	bool box = rayAABBIntersection(state.ray, minbox, maxbox, t5, t6);
-	if (!asdasd(state, center1, radius, t1, t2) || !asdasd(state, center2, radius, t3, t4) || !box)
+	if (!box || (t5 < 0 && t6 < 0))
 		return;
 	
 	t1 = (t1 > t2) ? t1 : t2;
@@ -295,6 +297,31 @@ void sphereBiconcave(inout State state, in float3 center1, in float3 center2, fl
 	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
 }
 
+void spherePlanoConvex(inout State state, in float3 center1, float radius, float3 minbox, float3 maxbox)
+{
+	float t1, t2, t5, t6;
+	
+	bool box = rayAABBIntersection(state.ray, minbox, maxbox, t5, t6);
+	if (!box || !asdasd(state, center1, radius, t1, t2))
+		return;
+	
+	t5 = (t5 < t6) ? t5 : t6;
+ 
+	state.hitPoint = state.ray.origin + t5 * state.ray.direction;
+	float3 newDirection = glassSample(state.ray.direction, float3(0, 0, 1));
+	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
+	state.glassHits++;
+	
+	// inside glass
+	asdasd(state, center1, radius, t1, t2);
+	t1 = (t1 > t2) ? t1 : t2;
+	
+	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
+	newDirection = glassSample(state.ray.direction, normalize(state.hitPoint - center1));
+	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
+}
+
+
 float4 textureTriangle(float3 baryCoord, in uint index)
 {
 	uint3 idx = planeIndices[index + (nTrianglesPlane << 1)];
@@ -320,7 +347,10 @@ void main(uint3 gid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
 	
 	float4 color = float4(state.ray.direction.x, 1.0, 0.0, 1.0);
 	
-	sphereBiconcave(state, float3(0, 4, -10.5), float3(0, 4, 10.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
+	//sphereBiconcave(state, float3(0, 4, -10.5), float3(0, 4, 10.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
+	//sphereBiconvex(state, float3(0, 4, -2.5), float3(0, 4, 14.5), 10, float3(-2.5, 0.5, 4.5), float3(2.5, 7.5, 7.5));
+	sphereBiconcave(state, float3(0, 4, -4.5), float3(0, 4, 16.5), 10, float3(-2.5, 0.5, 4.5), float3(2.5, 7.5, 7.5));
+	spherePlanoConvex(state, float3(0, 4, 8.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
 	//sphereBiconvex(state, float3(0, 4, -8.5), float3(0, 4, 8.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
 	
 	for (uint i = 0; i < nTrianglesPlane; i++)
@@ -342,59 +372,3 @@ void main(uint3 gid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
 	output[gid.xy] = color;
 	//output[gid.xy] = float4(0, 0, 0, 0);
 }
-
-	//while (rayBVHIntersection(state) < FLT_MAX)
-	//{
-	//	glassHit = true;
-	//	uint3 idx = lensIndices[state.triangleID + nTrianglesLens];
-	//	float3 n0 = lensNormals[idx.x];
-	//	float3 n1 = lensNormals[idx.y];
-	//	float3 n2 = lensNormals[idx.z];
-
-	//	float3 normal = n0 * state.baryCoord.x + n1 * state.baryCoord.y + n2 * state.baryCoord.z;
-	//	float3 newDirection = glassSample(state.ray.direction, normal);
-	//	state.ray = Ray::create(state.hitPoint + newDirection * 1e-8, newDirection);
-	//}
-	
-	
-	
-	//for (uint x = 0; x < 1; x++)
-	//{
-	//	float lastHit = FLT_MAX;
-	//	uint lastIdx = 0;
-	//	for (uint i = 0; i < nTrianglesLens; i++)
-	//	{
-	//		uint3 idx = lensIndices[i];
-	//		if (rayTriangleIntersection(state, lensVertices[idx.x].xyz, lensVertices[idx.y].xyz, lensVertices[idx.z].xyz, lastHit))
-	//			lastIdx = i;
-	//	}
-		
-	//	// advance ray
-	//	if (lastHit < FLT_MAX)
-	//	{
-	//		glassHit = true;
-	//		uint3 idx = lensIndices[lastIdx + nTrianglesLens];
-	//		float3 n0 = lensNormals[idx.x];
-	//		float3 n1 = lensNormals[idx.y];
-	//		float3 n2 = lensNormals[idx.z];
-
-	//		float3 normal = n0 * state.baryCoord.x + n1 * state.baryCoord.y + n2 * state.baryCoord.z;
-	//		float3 newDirection = glassSample(state.ray.direction, normal);
-			
-	//		state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
-	//	}
-	//}
-	
-	//float3 normal;
-	//float lastHit = FLT_MAX;
-	//if (raySphereIntersection(state, normal, float3(0, 0, 0), 2, lastHit))
-	//{
-	//	float3 newDirection = glassSample(state.ray.direction, normal);
-	//	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
-		
-	//	if (raySphereIntersection(state, normal, float3(0, 0, 0), 5, lastHit))
-	//	{
-	//		float3 newDirection = glassSample(state.ray.direction, normal);
-	//		state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
-	//	}
-	//}
