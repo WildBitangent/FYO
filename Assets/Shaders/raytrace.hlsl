@@ -45,35 +45,33 @@ cbuffer Cam : register(b0)
 cbuffer Model : register(b1)
 {
 	uint nTrianglesPlane;
-	uint nTrianglesLens;
+	uint lensCount;
 	float lensIor;
 };
 
-struct BVHNode
+struct LensStruct
 {
-	float3 min;
-	float pad0;
+	float3 center1;
+	float radius1;
 
-	float3 max;
-	float pad1;
+	float3 center2;
+	float radius2;
 	
-	int leftIndex;
-	int rightIndex;
-	bool isLeaf;
-	float pad2;
+	float3 minbox;
+	float pad0;
+	
+	float3 maxbox;
+	float type;
 };
 
 //////////////////////////////////
 
 RWTexture2D<float4> output : register(u0);
-StructuredBuffer<BVHNode> tree : register(t0);
-StructuredBuffer<float4> planeVertices : register(t1);
-StructuredBuffer<float2> planeTexcoord : register(t2);
+StructuredBuffer<LensStruct> lens : register(t0);
+Buffer<float4> planeVertices : register(t1);
+Buffer<float2> planeTexcoord : register(t2);
 Buffer<uint4> planeIndices : register(t3);
-Buffer<float4> lensVertices : register(t4);
-Buffer<float4> lensNormals : register(t5);
-Buffer<uint4> lensIndices : register(t6);
-Texture2D planeTexture : register(t7);
+Texture2D planeTexture : register(t4);
 SamplerState samplerState : register(s0);
 
 //////////////////////////////////
@@ -177,7 +175,7 @@ bool rayAABBIntersection(Ray r, float3 minbox, float3 maxbox, out float t1, out 
 	//return (t1 >= t0) ? (t0 > 0.f ? t0 : t1) : -1.0;
 }
 
-bool asdasd(inout State state, float3 center, float radius, out float t1, out float t2)
+bool raySphereIntersection(inout State state, float3 center, float radius, out float t1, out float t2)
 {
 	float3 sphereDir = center - state.ray.origin;
 	float tca = dot(sphereDir, state.ray.direction);
@@ -194,10 +192,12 @@ bool asdasd(inout State state, float3 center, float radius, out float t1, out fl
 	return true;
 }
 
-void sphereBiconvex(inout State state, in float3 center1, in float3 center2, float radius, float3 minbox, float3 maxbox)
+void sphereBiconvex(inout State state, in float3 center1, in float3 center2, float radius1, float radius2, float3 minbox, float3 maxbox)
 {
 	float t1, t2, t3, t4, t5, t6;
-	if (!asdasd(state, center1, radius, t1, t2) || !asdasd(state, center2, radius, t3, t4) || !rayAABBIntersection(state.ray, minbox, maxbox, t5, t6))
+	if (!raySphereIntersection(state, center1, radius1, t1, t2) || 
+		!raySphereIntersection(state, center2, radius2, t3, t4) || 
+		!rayAABBIntersection(state.ray, minbox, maxbox, t5, t6))
 		return;
 	
 	t1 = (t1 < t2) ? t1 : t2;
@@ -221,8 +221,8 @@ void sphereBiconvex(inout State state, in float3 center1, in float3 center2, flo
 	state.glassHits++;
 	
 	// inside glass
-	asdasd(state, center1, radius, t1, t2);
-	asdasd(state, center2, radius, t3, t4);
+	raySphereIntersection(state, center1, radius1, t1, t2);
+	raySphereIntersection(state, center2, radius2, t3, t4);
 	
 	t1 = (t1 > t2) ? t1 : t2;
 	t3 = (t3 > t4) ? t3 : t4;
@@ -244,11 +244,11 @@ void sphereBiconvex(inout State state, in float3 center1, in float3 center2, flo
 	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
 }
 
-void sphereBiconcave(inout State state, in float3 center1, in float3 center2, float radius, float3 minbox, float3 maxbox)
+void sphereBiconcave(inout State state, in float3 center1, in float3 center2, float radius1, float radius2, float3 minbox, float3 maxbox)
 {
 	float t1, t2, t3, t4, t5, t6;
-	asdasd(state, center1, radius, t1, t2);
-	asdasd(state, center2, radius, t3, t4);
+	raySphereIntersection(state, center1, radius1, t1, t2);
+	raySphereIntersection(state, center2, radius2, t3, t4);
 	bool box = rayAABBIntersection(state.ray, minbox, maxbox, t5, t6);
 	if (!box || (t5 < 0 && t6 < 0))
 		return;
@@ -274,8 +274,8 @@ void sphereBiconcave(inout State state, in float3 center1, in float3 center2, fl
 	state.glassHits++;
 	
 	// inside glass
-	asdasd(state, center1, radius, t1, t2);
-	asdasd(state, center2, radius, t3, t4);
+	raySphereIntersection(state, center1, radius1, t1, t2);
+	raySphereIntersection(state, center2, radius2, t3, t4);
 	
 	t1 = (t1 < t2) ? t1 : t2;
 	t3 = (t3 < t4) ? t3 : t4;
@@ -297,12 +297,12 @@ void sphereBiconcave(inout State state, in float3 center1, in float3 center2, fl
 	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
 }
 
-void spherePlanoConvex(inout State state, in float3 center1, float radius, float3 minbox, float3 maxbox)
+void spherePlanoConvex(inout State state, in float3 center1, float radius1, float3 minbox, float3 maxbox)
 {
 	float t1, t2, t5, t6;
 	
 	bool box = rayAABBIntersection(state.ray, minbox, maxbox, t5, t6);
-	if (!box || !asdasd(state, center1, radius, t1, t2))
+	if (!box || !raySphereIntersection(state, center1, radius1, t1, t2))
 		return;
 	
 	t5 = (t5 < t6) ? t5 : t6;
@@ -313,7 +313,7 @@ void spherePlanoConvex(inout State state, in float3 center1, float radius, float
 	state.glassHits++;
 	
 	// inside glass
-	asdasd(state, center1, radius, t1, t2);
+	raySphereIntersection(state, center1, radius1, t1, t2);
 	t1 = (t1 > t2) ? t1 : t2;
 	
 	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
@@ -347,11 +347,23 @@ void main(uint3 gid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
 	
 	float4 color = float4(state.ray.direction.x, 1.0, 0.0, 1.0);
 	
-	//sphereBiconcave(state, float3(0, 4, -10.5), float3(0, 4, 10.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
-	//sphereBiconvex(state, float3(0, 4, -2.5), float3(0, 4, 14.5), 10, float3(-2.5, 0.5, 4.5), float3(2.5, 7.5, 7.5));
-	sphereBiconcave(state, float3(0, 4, -4.5), float3(0, 4, 16.5), 10, float3(-2.5, 0.5, 4.5), float3(2.5, 7.5, 7.5));
-	spherePlanoConvex(state, float3(0, 4, 8.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
-	//sphereBiconvex(state, float3(0, 4, -8.5), float3(0, 4, 8.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
+	for (uint i = 0; i < lensCount; ++i)
+	{
+		uint type = lens[i].type;
+		
+		if (type == 0) // biconcave
+			sphereBiconcave(state, lens[i].center1, lens[i].center2, lens[i].radius1, lens[i].radius2, lens[i].minbox, lens[i].maxbox);
+		else if (type == 1) // biconvex
+			sphereBiconvex(state, lens[i].center1, lens[i].center2, lens[i].radius1, lens[i].radius2, lens[i].minbox, lens[i].maxbox);
+		else if (type == 2) // planoconvex
+			spherePlanoConvex(state, lens[i].center1, lens[i].radius1, lens[i].minbox, lens[i].maxbox);
+	}
+	
+	//sphereBiconcave(state, float3(0, 4, -10.5), float3(0, 4, 10.5), 10, 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
+	//sphereBiconvex(state, float3(0, 4, -2.5), float3(0, 4, 14.5), 10, 10, float3(-2.5, 0.5, 4.5), float3(2.5, 7.5, 7.5));
+	//	sphereBiconcave(state, float3(0, 4, -4.5), float3(0, 4, 16.5), 10, 10, float3(-2.5, 0.5, 4.5), float3(2.5, 7.5, 7.5));
+	//spherePlanoConvex(state, float3(0, 4, 8.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
+	//sphereBiconvex(state, float3(0, 4, -8.5), float3(0, 4, 8.5), 10, 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
 	
 	for (uint i = 0; i < nTrianglesPlane; i++)
 	{

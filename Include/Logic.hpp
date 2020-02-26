@@ -8,7 +8,7 @@
 struct alignas(16) ConstantBuffer
 {
 	uint32_t triangleCountPlane;
-	uint32_t triangleCountLens;
+	uint32_t lensCount = 0;
 	float lensIOR = 1.51714f;
 };
 
@@ -21,24 +21,27 @@ public:
 
 	void recieveMessage(Message message) override;
 
+	void pushLense(LensStruct& lense);
+	void popLense();
+	void clearLens();
+	LensStruct& getLense(size_t index);
+	
 private:
 	void submitDraw();
+	void updateLensBuffer();
 	
 private:
 	Camera mCamera;
 
 	Model mImageModel;
-
-	Buffer mBVHBuffer;
-	
-	Buffer mLensVertexBuffer;
-	Buffer mLensNormalBuffer;
-	Buffer mLensIndexBuffer;
+	std::array<LensStruct, 20> mLensArray;
+	size_t mLensCount = 0;
 	
 	Buffer mPlaneVertexBuffer;
 	Buffer mPlaneTexcoordBuffer;
 	Buffer mPlaneIndexBuffer;
 	
+	Buffer mLensBuffer;
 	Buffer mConstantBuffer;
 
 	Texture mPlaneTexture;

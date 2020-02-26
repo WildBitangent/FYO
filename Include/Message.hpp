@@ -7,7 +7,7 @@ enum class MessageID : size_t
 	DRAW,
 	DRAW_RT,
 	INPUT_MONITOR_KEY,
-	UPDATE_CAMERA,
+	UPDATE_BUFFER,
 };
 
 

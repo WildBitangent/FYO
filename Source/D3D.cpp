@@ -1,9 +1,10 @@
 ﻿#include "D3D.hpp"
 
 
-void D3D::Init(ID3D11Device* device)
+void D3D::Init(ID3D11Device* device, ID3D11DeviceContext* context)
 {
 	mDevice = device;
+	mContext = context;
 }
 
 D3D& D3D::getInstance()

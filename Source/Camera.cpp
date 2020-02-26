@@ -73,7 +73,7 @@ void Camera::update(float dt)
 	mBufferCPU.vertical = 2 * mHalfHeight * up;
 
 	Message msg;
-	msg.messageID = MessageID::UPDATE_CAMERA;
+	msg.messageID = MessageID::UPDATE_BUFFER;
 	msg.datap = new std::pair<Camera::CameraBuffer&, Buffer&>(mBufferCPU, mBufferGPU);
 
 	MessageBus::post(msg);

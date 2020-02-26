@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include <d3d11.h>
-#include <vector>
-#include <string>
 #include <DirectXMath.h>
 #include "UniqueDX11.hpp"
+#include <vector>
+#include <string>
 
 
 struct Buffer
@@ -26,7 +26,7 @@ struct Texture
 class D3D
 {
 public:
-	void Init(ID3D11Device* device);
+	void Init(ID3D11Device* device, ID3D11DeviceContext* context);
 	static D3D& getInstance();
 
 	template<typename T>
@@ -107,11 +107,15 @@ public:
 	);
 
 	template<typename T>
+	void updateBuffer(ID3D11Resource* buffer, const T* data);
+
+	template<typename T>
 	T createShader(const std::wstring& path, const std::string& target);
 
 	
 private:
 	ID3D11Device* mDevice = nullptr;
+	ID3D11DeviceContext* mContext = nullptr;
 	
 };
 

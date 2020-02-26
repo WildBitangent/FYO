@@ -114,6 +114,12 @@ Texture D3D::createBasicTexture(std::vector<T> data, DirectX::XMUINT2 resolution
 	return texture;
 }
 
+template<typename T>
+void D3D::updateBuffer(ID3D11Resource* buffer, const T* data)
+{
+	mContext->UpdateSubresource(buffer, 0, nullptr, data, 0, 0);
+}
+
 template <typename T>
 T D3D::createShader(const std::wstring& path, const std::string& target)
 {

@@ -13,6 +13,7 @@
 
 using namespace DirectX;
 
+// pick dedicated GPU if possible
 extern "C" {
 	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
@@ -44,20 +45,20 @@ void Renderer::init(HWND hwnd, Resolution resolution)
 	swapChainDesc.OutputWindow = hwnd;
 	swapChainDesc.Windowed = true;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-
-	IDXGIFactory* pFactory;
-	CreateDXGIFactory(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&pFactory));
-
-	IDXGIAdapter* adapter;
-	std::vector <IDXGIAdapter*> adapters;
-
-	
-	// todo selected best suitable adapter
-	
-	for (size_t i = 0; pFactory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i) 
-		adapters.emplace_back(adapter);
-
-	pFactory->Release();
+	//
+	// IDXGIFactory* pFactory;
+	// CreateDXGIFactory(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&pFactory));
+	//
+	// IDXGIAdapter* adapter;
+	// std::vector <IDXGIAdapter*> adapters;
+	//
+	//
+	// // todo selected best suitable adapter
+	//
+	// for (size_t i = 0; pFactory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i) 
+	// 	adapters.emplace_back(adapter);
+	//
+	// pFactory->Release();
 	
 	if (const auto result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG, nullptr, 0,
 		D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, nullptr, &mContext); result != S_OK)
@@ -85,7 +86,7 @@ void Renderer::init(HWND hwnd, Resolution resolution)
 
 	mContext->RSSetViewports(1, &viewport);
 
-	D3D::getInstance().Init(mDevice);
+	D3D::getInstance().Init(mDevice, mContext);
 	MessageBus::registerListener(this);
 }
 
@@ -103,7 +104,7 @@ void Renderer::recieveMessage(Message message)
 		delete data;
 	}
 
-	else if (message.messageID == MessageID::UPDATE_CAMERA)
+	else if (message.messageID == MessageID::UPDATE_BUFFER)
 	{
 		auto data = reinterpret_cast<std::pair<Camera::CameraBuffer&, Buffer&>*>(message.datap);
 		mContext->UpdateSubresource(data->second.buffer, 0, nullptr, &data->first, 0, 0);
@@ -130,13 +131,10 @@ void Renderer::draw(RayTraceStruct& rayStruct)
 	};
 	
 	std::vector<ID3D11ShaderResourceView*> SRVs = {
-		rayStruct.bvhtree.srv,
+		rayStruct.lensArray.srv,
 		rayStruct.planeVertexBuffer.srv,
 		rayStruct.planeTexcoordBuffer.srv,
 		rayStruct.planeIndexBuffer.srv,
-		rayStruct.lensVertexBuffer.srv,
-		rayStruct.lensNormalBuffer.srv,
-		rayStruct.lensIndexBuffer.srv,
 		rayStruct.planeTexture.srv
 	};
 	

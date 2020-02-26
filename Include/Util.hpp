@@ -8,15 +8,11 @@
 struct RayTraceStruct
 {
 	Buffer& camera;
-	Buffer& bvhtree;
+	Buffer& lensArray;
 	
 	Buffer& planeVertexBuffer;
 	Buffer& planeTexcoordBuffer;
 	Buffer& planeIndexBuffer;
-	
-	Buffer& lensVertexBuffer;
-	Buffer& lensNormalBuffer;
-	Buffer& lensIndexBuffer;
 	
 	Buffer& constantBuffer;
 	
@@ -28,4 +24,24 @@ struct RayTraceStruct
 	uni::VertexShader& vertexShader;
 	uni::PixelShader& pixelShader;
 	uni::ComputeShader& raytraceShader;
+};
+
+enum class LensType : uint32_t
+{
+	BICONCAVE,
+	BICONVEX,
+	PLANOCONVEX,
+};
+
+struct alignas(16) LensStruct
+{
+	DirectX::XMFLOAT3 center1;
+	float radius1;
+	DirectX::XMFLOAT3 center2;
+	float radius2;
+
+	DirectX::XMFLOAT3A minBox;
+	DirectX::XMFLOAT3 maxBox;
+
+	LensType type;
 };
