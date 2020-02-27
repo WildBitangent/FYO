@@ -61,7 +61,7 @@ struct LensStruct
 	float pad0;
 	
 	float3 maxbox;
-	float type;
+	uint type;
 };
 
 //////////////////////////////////

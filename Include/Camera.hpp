@@ -9,7 +9,7 @@ class Camera : public Listener
 public:
 	struct alignas(16) CameraBuffer
 	{
-		DirectX::XMVECTOR position = {1.f, 3.f, 8.0f};
+		DirectX::XMVECTOR position = {1.f, 3.f, 348.0f};
 		DirectX::XMVECTOR upperLeftCorner;
 		DirectX::XMVECTOR horizontal;
 		DirectX::XMVECTOR vertical;

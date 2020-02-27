@@ -7,8 +7,8 @@
 Logic::Logic()
 	: mImageModel(R"(Assets/Models/plane.obj)")
 {
-	mPlaneVertexBuffer = D3D::getInstance().createStructuredBuffer(mImageModel.getVertexArray());
-	mPlaneTexcoordBuffer = D3D::getInstance().createStructuredBuffer(mImageModel.getTextCoordArray());
+	mPlaneVertexBuffer = D3D::getInstance().createHomogenousBuffer(mImageModel.getVertexArray(), DXGI_FORMAT_R32G32B32A32_FLOAT);
+	mPlaneTexcoordBuffer = D3D::getInstance().createHomogenousBuffer(mImageModel.getTextCoordArray(), DXGI_FORMAT_R32G32_FLOAT);
 	mPlaneIndexBuffer = D3D::getInstance().createHomogenousBuffer(mImageModel.getIndexArray(), DXGI_FORMAT_R32G32B32A32_UINT);
 	mPlaneTexture = D3D::getInstance().createBasicTexture(mImageModel.getTexture(), mImageModel.getTextureDimension());
 
@@ -40,37 +40,57 @@ Logic::Logic()
 		lense.type = LensType::BICONCAVE;
 		lense.radius1 = radius1;
 		lense.radius2 = radius2;
+		lense.minBox = { center.x - dimensions.x / 2, center.y - dimensions.y / 2, center.z - width };
+		lense.maxBox = { center.x + dimensions.x / 2, center.y + dimensions.y / 2, center.z + width };
+		lense.center1 = center;
+		lense.center2 = center;
+
+		lense.center1.z += width / 2 + radius1;
+		lense.center2.z -= width / 2 - radius2;
+
+		return lense;
+	};
+
+	auto createPlanoConvex = [](DirectX::XMFLOAT3 center, DirectX::XMFLOAT2 dimensions, float width, float radius)
+	{
+		LensStruct lense;
+		lense.type = LensType::PLANOCONVEX;
+		lense.radius1 = radius;
+		lense.minBox = { center.x - dimensions.x / 2, center.y - dimensions.y / 2, center.z - width / 2 };
+		lense.maxBox = { center.x + dimensions.x / 2, center.y + dimensions.y / 2, center.z + width / 2 };
+		lense.center1 = center;
+
+		lense.center1.z = radius + lense.minBox.z;
+
+		return lense;
+	};
+
+	auto createBiconvex = [](DirectX::XMFLOAT3 center, DirectX::XMFLOAT2 dimensions, float width, float radius1, float radius2)
+	{
+		LensStruct lense;
+		lense.type = LensType::BICONVEX;
+		lense.radius1 = radius1;
+		lense.radius2 = radius2;
 		lense.minBox = { center.x - dimensions.x / 2, center.y - dimensions.y / 2, center.z - width / 2 };
 		lense.maxBox = { center.x + dimensions.x / 2, center.y + dimensions.y / 2, center.z + width / 2 };
 		lense.center1 = center;
 		lense.center2 = center;
 
-		lense.center1.z += 
+		lense.center1.z = lense.maxBox.z - radius1;
+		lense.center2.z = lense.minBox.z + radius2;
+
+		return lense;
 	};
 
 
-	LensStruct lens1 = {
-		{0, 4, -4.5},
-		10,
-		{0, 4, 16.5},
-		10,
-		{-2.5, 0.5, 4.5},
-		{2.5, 7.5, 7.5},
-		LensType::BICONCAVE
-	};
+	LensStruct lens1 = createBiconcave({0, 4, 340}, {5, 7}, 1.5, 10, 10);
+	LensStruct lens2 = createPlanoConvex({0, 4, 325}, {5, 7}, 2, 30);
+	LensStruct lens3 = createBiconvex({0, 4, 6}, {5, 7}, 1.5, 10, 10);
 
-	LensStruct lens2 = {
-		{0, 4, 8.5},
-		10,
-		{0, 0, 0},
-		0,
-		{-2.5, 0.5, -1.5},
-		{2.5, 7.5, 1.5},
-		LensType::PLANOCONVEX
-	};
 
 	pushLense(lens1);
-	// pushLense(lens2);
+	pushLense(lens2);
+	// pushLense(lens3);
 
 	updateLensBuffer();
 }
