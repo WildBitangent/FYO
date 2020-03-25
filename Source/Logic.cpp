@@ -45,8 +45,8 @@ Logic::Logic()
 		lense.center1 = center;
 		lense.center2 = center;
 
-		lense.center1.z += width / 2 + radius1;
-		lense.center2.z -= width / 2 - radius2;
+		lense.center1.z += radius1 + width / 2;
+		lense.center2.z -= radius2 + width / 2;
 
 		return lense;
 	};
@@ -83,14 +83,18 @@ Logic::Logic()
 	};
 
 
-	LensStruct lens1 = createBiconcave({0, 4, 340}, {5, 7}, 1.5, 10, 10);
-	LensStruct lens2 = createPlanoConvex({0, 4, 325}, {5, 7}, 2, 30);
-	LensStruct lens3 = createBiconvex({0, 4, 6}, {5, 7}, 1.5, 10, 10);
+	//LensStruct lens1 = createBiconcave({0, 4, 340}, {5, 7}, 1.5, 10, 10);
+	//LensStruct lens2 = createPlanoConvex({0, 4, 325}, {5, 7}, 2, 30);
+	//LensStruct lens3 = createBiconvex({0, 4, 6}, {5, 7}, 1.5, 10, 10);
+
+	LensStruct lens1 = createBiconvex({0, 3, 7}, {5, 7}, 1.5, 10, 10);
+	LensStruct lens2 = createBiconcave({ 0, 3, 15 }, { 5, 7 }, 1.5, 5, 5);
+	LensStruct lens3 = createPlanoConvex({ 0, 3, 25 }, { 5, 7 }, 1.5, 5);
 
 
-	pushLense(lens1);
+	pushLense(lens3);
 	pushLense(lens2);
-	// pushLense(lens3);
+	pushLense(lens1);
 
 	updateLensBuffer();
 }

@@ -47,8 +47,8 @@
     <LibraryPath>C:\Users\matho\source\repos\CaptainUnitaco\FYO\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\matho\source\repos\CaptainUnitaco\FYO\Include\spdlog\fmt;C:\Users\matho\source\repos\CaptainUnitaco\FYO\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\matho\source\repos\CaptainUnitaco\FYO\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)Include\spdlog\fmt;$(ProjectDir)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
