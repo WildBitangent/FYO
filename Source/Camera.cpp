@@ -92,3 +92,10 @@ Buffer& Camera::getBufferGPU()
 {
 	return mBufferGPU;
 }
+
+DirectX::XMFLOAT3 Camera::getDirection()
+{
+	XMFLOAT3 data;
+	XMStoreFloat3(&data, mFront);
+	return data;
+}

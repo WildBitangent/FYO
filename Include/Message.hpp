@@ -6,7 +6,7 @@ enum class MessageID : size_t
 {
 	DRAW,
 	DRAW_RT,
-	INPUT_MONITOR_KEY,
+	INPUT_KEY,
 	UPDATE_BUFFER,
 };
 
@@ -16,8 +16,8 @@ struct Message
 	MessageID messageID;
 	union
 	{
-		float dataf;
 		int datai;
+		float dataf;
 		void(*datafun)(void*);
 		void* datap;
 	};

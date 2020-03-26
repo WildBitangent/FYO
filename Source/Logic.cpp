@@ -7,6 +7,8 @@
 Logic::Logic()
 	: mImageModel(R"(Assets/Models/plane.obj)")
 {
+	mConstBufferData.triangleCountPlane = mImageModel.getIndexArray().size() / 3;
+
 	mPlaneVertexBuffer = D3D::getInstance().createHomogenousBuffer(mImageModel.getVertexArray(), DXGI_FORMAT_R32G32B32A32_FLOAT);
 	mPlaneTexcoordBuffer = D3D::getInstance().createHomogenousBuffer(mImageModel.getTextCoordArray(), DXGI_FORMAT_R32G32_FLOAT);
 	mPlaneIndexBuffer = D3D::getInstance().createHomogenousBuffer(mImageModel.getIndexArray(), DXGI_FORMAT_R32G32B32A32_UINT);
@@ -16,12 +18,10 @@ Logic::Logic()
 	mRenderTexture = D3D::getInstance().createBasicTexture(std::vector<uint32_t>(), {WIDTH, HEIGHT}, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE);
 
 	mLensBuffer = D3D::getInstance().createStructuredBuffer(std::vector<LensStruct>(mLensArray.size()));
+	mRaysBuffer = D3D::getInstance().createStructuredBuffer(std::vector<RayStruct>(mRayArray.size()));
+	//mRaysBuffer = D3D::getInstance().createStructuredBuffer(std::vector<TracedRayStruct>({ { {-1, 3, 30}, {0, 0, -1} }, { { 1, 3, 30 }, { 0, 0, -1 } } }));
 	
-	ConstantBuffer constants{
-		mImageModel.getIndexArray().size() / 3,
-	};
-	
-	mConstantBuffer.buffer = D3D::getInstance().createBuffer(constants, D3D11_BIND_CONSTANT_BUFFER);
+	mConstantBuffer.buffer = D3D::getInstance().createBuffer(mConstBufferData, D3D11_BIND_CONSTANT_BUFFER);
 	
 	mVertexShader = D3D::getInstance().createShader<uni::VertexShader>(LR"(Assets\Shaders\vertex.hlsl)", "vs_5_0");
 	mPixelShader = D3D::getInstance().createShader<uni::PixelShader>(LR"(Assets\Shaders\pixel.hlsl)", "ps_5_0");
@@ -89,7 +89,7 @@ Logic::Logic()
 
 	LensStruct lens1 = createBiconvex({0, 3, 7}, {5, 7}, 1.5, 10, 10);
 	LensStruct lens2 = createBiconcave({ 0, 3, 15 }, { 5, 7 }, 1.5, 5, 5);
-	LensStruct lens3 = createPlanoConvex({ 0, 3, 25 }, { 5, 7 }, 1.5, 5);
+	LensStruct lens3 = createPlanoConvex({ 0, 3, 25 }, { 5, 7 }, 1.5, 10);
 
 
 	pushLense(lens3);
@@ -107,21 +107,85 @@ void Logic::update(float dt)
 
 void Logic::recieveMessage(Message message)
 {
+	if (message.messageID == MessageID::INPUT_KEY)
+	{
+		if (message.datai == 'B') // ray beam around
+		{
+			mConstBufferData.raysCount = 0;
+			DirectX::XMFLOAT3 camPos;
+			DirectX::XMStoreFloat3(&camPos, mCamera.getBufferCPU()->position);
+
+			constexpr size_t rayCount = 10;
+			constexpr float radius = 1.5f;
+
+			for (size_t i = 0; i < rayCount; ++i)
+			{
+				float theta = (2 * DirectX::XM_PI * i) / rayCount;
+				DirectX::XMFLOAT3 origin = {
+					radius * std::sinf(theta) + camPos.x,
+					radius * std::cosf(theta) + camPos.y,
+					camPos.z
+				};
+
+				mRayArray[mConstBufferData.raysCount++] = { origin, mCamera.getDirection() };
+			}
+			updateRaysBuffer();
+		}
+		else if (message.datai == 'V')
+		{
+			mConstBufferData.raysCount = 0;
+			DirectX::XMFLOAT3 origin;
+			DirectX::XMStoreFloat3(&origin, mCamera.getBufferCPU()->position);
+
+			constexpr size_t rayCount = 32;
+			constexpr float radius = 0.015f; // max 0.5
+
+			for (size_t i = 0; i < rayCount; ++i)
+			{
+				float theta = (2 * DirectX::XM_PI * i) / rayCount;
+
+				float x = 0.5f + radius * std::sinf(theta);
+				DirectX::XMVECTOR coordX = DirectX::XMVectorSet(x, x, x, x);
+
+				float y = 0.5f + radius * std::cosf(theta);
+				DirectX::XMVECTOR coordY = DirectX::XMVectorSet(y, y, y, y);
+
+				DirectX::XMFLOAT3 direction;
+				DirectX::XMStoreFloat3(&direction,
+					DirectX::XMVector3Normalize(
+						DirectX::XMVectorAdd(
+							mCamera.getBufferCPU()->upperLeftCorner,
+							DirectX::XMVectorSubtract(
+								DirectX::XMVectorMultiply(coordX, mCamera.getBufferCPU()->horizontal),
+								DirectX::XMVectorMultiply(coordY, mCamera.getBufferCPU()->vertical)
+							)
+						)
+					)
+				);
+
+				//if (i == 0)
+				//	origin.z -= 0.00001f * (direction.z > 0) ? 1 : -1;
+				
+				mRayArray[mConstBufferData.raysCount++] = { origin, direction };
+			}
+			updateRaysBuffer();
+		}
+	}
 }
 
 void Logic::pushLense(LensStruct& lense)
 {
-	mLensArray[mLensCount++] = lense;
+	mLensArray[mConstBufferData.lensCount++] = lense;
 }
 
 void Logic::popLense()
 {
-	mLensCount = mLensCount == 0 ? mLensCount : mLensCount - 1;
+	mConstBufferData.lensCount = mConstBufferData.lensCount == 0 ? mConstBufferData.lensCount : mConstBufferData.lensCount - 1;
 }
 
 void Logic::clearLens()
 {
-	mLensCount = 0;
+	mConstBufferData.lensCount = 0;
 }
 
 LensStruct& Logic::getLense(size_t index)
@@ -129,12 +193,12 @@ LensStruct& Logic::getLense(size_t index)
 	return mLensArray[index];
 }
 
-
 void Logic::submitDraw()
 {
 	auto rt = new RayTraceStruct{
 		mCamera.getBufferGPU(),
 		mLensBuffer,
+		mRaysBuffer,
 		mPlaneVertexBuffer,
 		mPlaneTexcoordBuffer,
 		mPlaneIndexBuffer,
@@ -158,11 +222,33 @@ void Logic::updateLensBuffer()
 {
 	D3D::getInstance().updateBuffer(mLensBuffer.buffer, mLensArray.data());
 
+	mConstBufferData.lensMinBox = mLensArray[0].minBox;
+	mConstBufferData.lensMaxBox = DirectX::XMFLOAT3A(reinterpret_cast<float*>(&mLensArray[0].maxBox));
+
+	// create AABB
+	for (size_t i = 1; i < mConstBufferData.lensCount; ++i)
+	{
+		auto min = [](auto& a, auto& b) {
+			a.x = (a.x < b.x ? a.x : b.x);
+			a.y = (a.y < b.y ? a.y : b.y);
+			a.z = (a.z < b.z ? a.z : b.z);
+		};
+
+		auto max = [](auto& a, auto& b) {
+			a.x = (a.x > b.x ? a.x : b.x);
+			a.y = (a.y > b.y ? a.y : b.y);
+			a.z = (a.z > b.z ? a.z : b.z);
+		};
+
+		min(mConstBufferData.lensMinBox, mLensArray[i].minBox);
+		max(mConstBufferData.lensMaxBox, mLensArray[i].maxBox);
+	}
 	
-	ConstantBuffer constants{
-		mImageModel.getIndexArray().size() / 3,
-		mLensCount,
-	};
-	D3D::getInstance().updateBuffer(mConstantBuffer.buffer, &constants);
+	D3D::getInstance().updateBuffer(mConstantBuffer.buffer, &mConstBufferData);
 }
 
+void Logic::updateRaysBuffer()
+{
+	D3D::getInstance().updateBuffer(mRaysBuffer.buffer, mRayArray.data());
+	D3D::getInstance().updateBuffer(mConstantBuffer.buffer, &mConstBufferData);
+}

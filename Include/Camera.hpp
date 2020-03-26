@@ -11,7 +11,7 @@ public:
 	{
 		// DirectX::XMVECTOR position = {1.f, 3.f, 348.0f};
 		//DirectX::XMVECTOR position = { 1.f, 3.f, 35.0f };
-		DirectX::XMVECTOR position = { 0.f, 5.f, 30.f };
+		DirectX::XMVECTOR position = { 0.f, 3.f, 30.f };
 		DirectX::XMVECTOR upperLeftCorner;
 		DirectX::XMVECTOR horizontal;
 		DirectX::XMVECTOR vertical;
@@ -28,6 +28,7 @@ public:
 
 	CameraBuffer* getBufferCPU();
 	Buffer& getBufferGPU();
+	DirectX::XMFLOAT3 getDirection();
 
 private:
 	CameraBuffer mBufferCPU;

@@ -103,6 +103,8 @@ LRESULT Window::wndCallback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	switch (msg)
 	{
 	case WM_KEYDOWN:
+		MessageBus::post(Message{ MessageID::INPUT_KEY, static_cast<int>(wParam) });
+
 		if (wParam == VK_ESCAPE)
 			DestroyWindow(hwnd);
 		return 0;

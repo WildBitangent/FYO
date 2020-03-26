@@ -102,6 +102,12 @@
     <ClCompile Include="Source\LensDatabase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Ray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Lens.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Camera.hpp">
@@ -202,6 +208,12 @@
     </ClInclude>
     <ClInclude Include="Include\SBVH\Util.h">
       <Filter>3rd party\SBVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Ray.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Lens.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

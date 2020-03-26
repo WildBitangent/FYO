@@ -43,8 +43,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\matho\source\repos\CaptainUnitaco\FYO\Include\spdlog\fmt;C:\Users\matho\source\repos\CaptainUnitaco\FYO\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\matho\source\repos\CaptainUnitaco\FYO\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)Include\spdlog\fmt;$(ProjectDir)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)Include\spdlog\fmt;$(ProjectDir)Include;$(IncludePath)</IncludePath>
@@ -98,7 +98,9 @@
     <ClCompile Include="Source\BVHWrapper.cpp" />
     <ClCompile Include="Source\Camera.cpp" />
     <ClInclude Include="Include\BVHWrapper.hpp" />
+    <ClInclude Include="Include\Lens.hpp" />
     <ClInclude Include="Include\lodepng\lodepng.h" />
+    <ClInclude Include="Include\Ray.hpp" />
     <ClInclude Include="Include\SBVH\Array.h" />
     <ClInclude Include="Include\SBVH\BVH.h" />
     <ClInclude Include="Include\SBVH\BVHNode.h" />
@@ -114,11 +116,13 @@
     </ClInclude>
     <ClCompile Include="Source\D3D.cpp" />
     <ClCompile Include="Source\Input.cpp" />
+    <ClCompile Include="Source\Lens.cpp" />
     <ClCompile Include="Source\LensDatabase.cpp" />
     <ClCompile Include="Source\Logic.cpp" />
     <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Message.cpp" />
     <ClCompile Include="Source\Model.cpp" />
+    <ClCompile Include="Source\Ray.cpp" />
     <ClCompile Include="Source\Renderer.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>

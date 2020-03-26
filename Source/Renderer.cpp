@@ -4,6 +4,7 @@
 #include "Constants.hpp"
 #include "fmt.h"
 
+#include <dxgi1_6.h>
 #include <d3dcompiler.h>
 #include <stdexcept>
 #include <vector>
@@ -12,12 +13,6 @@
 #include <thread>
 
 using namespace DirectX;
-
-// pick dedicated GPU if possible
-extern "C" {
-	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
 
 Renderer& Renderer::getInstance()
 {
@@ -45,20 +40,18 @@ void Renderer::init(HWND hwnd, Resolution resolution)
 	swapChainDesc.OutputWindow = hwnd;
 	swapChainDesc.Windowed = true;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	//
-	// IDXGIFactory* pFactory;
-	// CreateDXGIFactory(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&pFactory));
-	//
-	// IDXGIAdapter* adapter;
-	// std::vector <IDXGIAdapter*> adapters;
-	//
-	//
-	// // todo selected best suitable adapter
-	//
-	// for (size_t i = 0; pFactory->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i) 
-	// 	adapters.emplace_back(adapter);
-	//
-	// pFactory->Release();
+
+	IDXGIFactory2* pFactory;
+	CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, __uuidof(IDXGIFactory), reinterpret_cast<void**>(&pFactory));
+	auto factory6 = reinterpret_cast<IDXGIFactory6*>(pFactory);
+
+	IDXGIAdapter* adapter;
+	factory6->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
+	pFactory->Release();
+
+	if (const auto result = D3D11CreateDeviceAndSwapChain(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, D3D11_CREATE_DEVICE_DEBUG, nullptr, 0,
+		D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, nullptr, &mContext); result != S_OK)
+		throw std::runtime_error(fmt::format("Failed to create device with Swapchain. ERR: {}", result));
 	
 	if (const auto result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG, nullptr, 0,
 		D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, nullptr, &mContext); result != S_OK)
@@ -135,7 +128,8 @@ void Renderer::draw(RayTraceStruct& rayStruct)
 		rayStruct.planeVertexBuffer.srv,
 		rayStruct.planeTexcoordBuffer.srv,
 		rayStruct.planeIndexBuffer.srv,
-		rayStruct.planeTexture.srv
+		rayStruct.planeTexture.srv,
+		rayStruct.raysArray.srv
 	};
 	
 	std::vector<ID3D11ShaderResourceView*> nullSRV(SRVs.size());
