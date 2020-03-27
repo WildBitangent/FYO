@@ -253,132 +253,80 @@ void sphereBiconvex(inout State state, in float3 center1, in float3 center2, flo
 		!raySphereIntersection(state, center2, radius2, t3, t4) || 
 		!rayAABBIntersection(state.ray, minbox, maxbox, t5, t6))
 		return;
-	
-	t1 = (t1 < t2) ? t1 : t2;
-	t3 = (t3 < t4) ? t3 : t4;
-	
-	//t1 = (t1 > t3) ? t1 : t3;
-	
-	float3 center = center1;
-	if (t1 < t3)
-	{
-		t1 = t3;
-		center = center2;
-	}
-	
-	if (t1 < 0.f)
+
+	state.glassHits++;
+	if (state.ray.direction.z >= 0.0)
+		return;
+
+	// we are in front of first radius
+	if (t1 < 0.0)
 		return;
  
 	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
-	float3 newDirection = glassSample(state.ray.direction, normalize(state.hitPoint - center), true);
-	state.ray = Ray::create(state.hitPoint + newDirection * 1e-5, newDirection);
-	state.glassHits++;
+	float3 newDirection = glassSample(state.ray.direction, normalize(state.hitPoint - center1), true);
+	state.ray = Ray::create(state.hitPoint, newDirection);
 	
-	// inside glass
-	raySphereIntersection(state, center1, radius1, t1, t2);
-	raySphereIntersection(state, center2, radius2, t3, t4);
+	// we are inside lens
+	raySphereIntersection(state, center2, radius2, t1, t2);
 	
-	t1 = (t1 > t2) ? t1 : t2;
-	t3 = (t3 > t4) ? t3 : t4;
-	
-	//t1 = (t1 > t3) ? t1 : t3;
-	
-	center = center1;
-	if (t1 > t3)
-	{
-		t1 = t3;
-		center = center2;
-	}
-	
-	//if (t1 < 0.f)
-	//	return;
-	
-	state.baryCoord = state.ray.origin + t1 * state.ray.direction;
-	newDirection = glassSample(state.ray.direction, normalize(center - state.baryCoord), false);
-	state.ray = Ray::create(state.baryCoord + newDirection * 1e-5, newDirection);
+	state.baryCoord = state.ray.origin + t2 * state.ray.direction;
+	newDirection = glassSample(state.ray.direction, normalize(center2 - state.baryCoord), false);
+	state.ray = Ray::create(state.baryCoord, newDirection);
 }
 
 void sphereBiconcave(inout State state, in float3 center1, in float3 center2, float radius1, float radius2, float3 minbox, float3 maxbox)
 {
-	float t1, t2, t3, t4, t5, t6;
-	raySphereIntersection(state, center1, radius1, t1, t2);
-	raySphereIntersection(state, center2, radius2, t3, t4);
-	bool box = rayAABBIntersection(state.ray, minbox, maxbox, t5, t6);
-	if (!box)
+	float t1, t2;
+	
+	if (!rayAABBIntersection(state.ray, minbox, maxbox, t1, t2))
+		return;
+
+	state.glassHits++;
+	if (state.ray.direction.z >= 0.0)
 		return;
 	
-	t1 = (t1 > t2) ? t1 : t2;
-	t3 = (t3 > t4) ? t3 : t4;
+	raySphereIntersection(state, center1, radius1, t1, t2);
 	
-	//t1 = (t1 > t3) ? t1 : t3;
+	// in front of first ball
+	if (t2 < 0.0)
+		return;	
 	
-	float3 center = center1;
-	if (t1 > t3)
-	{
-		t1 = t3;
-		center = center2;
-	}
-	
-	//if (t1 < 0.f && !box)
-	//	return;
- 
-	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
-	float3 newDirection = glassSample(state.ray.direction, normalize(center - state.hitPoint), true);
-	state.ray = Ray::create(state.hitPoint/* + newDirection * 1e-5*/, newDirection);
-	state.glassHits++;
-	//state.baryCoord = state.hitPoint;
+	state.hitPoint = state.ray.origin + t2 * state.ray.direction;
+	float3 newDirection = glassSample(state.ray.direction, normalize(center1 - state.hitPoint), true);
+	state.ray = Ray::create(state.hitPoint, newDirection);
 	
 	// inside glass
-	raySphereIntersection(state, center1, radius1, t1, t2);
-	raySphereIntersection(state, center2, radius2, t3, t4);
-	
-	t1 = (t1 < t2) ? t1 : t2;
-	t3 = (t3 < t4) ? t3 : t4;
-	
-	//t1 = (t1 > t3) ? t1 : t3;
-	
-	center = center1;
-	if (t1 < t3)
-	{
-		t1 = t3;
-		center = center2;
-	}
-	
-	//if (t1 < 0.f)
-	//	return;
- 
+	raySphereIntersection(state, center2, radius2, t1, t2);
+		
 	state.baryCoord = state.ray.origin + t1 * state.ray.direction;
-	newDirection = glassSample(state.ray.direction, normalize(state.baryCoord - center), false);
-	state.ray = Ray::create(state.baryCoord/* + newDirection * 1e-5*/, newDirection);
-
-	//if (all(newDirection == float3(0, 0, 0)))
-		//state.ray.direction = float3(0, 0, -1);
-		//state.baryCoord = -10;
+	newDirection = glassSample(state.ray.direction, normalize(state.baryCoord - center2), false);
+	state.ray = Ray::create(state.baryCoord, newDirection);
 }
 
 void spherePlanoConvex(inout State state, in float3 center1, float radius1, float3 minbox, float3 maxbox)
 {
-	float t1, t2, t5, t6;
+	float t1, t2;
 	
-	bool box = rayAABBIntersection(state.ray, minbox, maxbox, t5, t6);
-	if (!box || !raySphereIntersection(state, center1, radius1, t1, t2))
+	// intersect with box
+	if (!rayAABBIntersection(state.ray, minbox, maxbox, t1, t2))
 		return;
 
-	if (raySphereIntersection(state, center1, radius1, t1, t2) && !box)
+	// disable backward +z look
+	float t3, t4;
+	if (raySphereIntersection(state, center1, radius1, t3, t4))
+		state.glassHits++;
+
+	if (state.ray.direction.z >= 0.0)
 		return;
 	
-	t5 = (t5 < t6) ? t5 : t6;
- 
-	state.hitPoint = state.ray.origin + t5 * state.ray.direction;
+	state.hitPoint = state.ray.origin + t1 * state.ray.direction;
 	float3 newDirection = glassSample(state.ray.direction, float3(0, 0, 1), true);
 	state.ray = Ray::create(state.hitPoint, newDirection);
-	state.glassHits++;
 	
 	// inside glass
 	raySphereIntersection(state, center1, radius1, t1, t2);
-	t1 = (t1 > t2) ? t1 : t2;
 	
-	state.baryCoord = state.ray.origin + t1 * state.ray.direction;
+	state.baryCoord = state.ray.origin + t2 * state.ray.direction;
 	newDirection = glassSample(state.ray.direction, normalize(center1 - state.baryCoord), false);
 	state.ray = Ray::create(state.baryCoord, newDirection);
 }

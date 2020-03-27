@@ -89,7 +89,7 @@ Logic::Logic()
 
 	LensStruct lens1 = createBiconvex({0, 3, 7}, {5, 7}, 1.5, 10, 10);
 	LensStruct lens2 = createBiconcave({ 0, 3, 15 }, { 5, 7 }, 1.5, 5, 5);
-	LensStruct lens3 = createPlanoConvex({ 0, 3, 25 }, { 5, 7 }, 1.5, 10);
+	LensStruct lens3 = createPlanoConvex({ 0, 3, 25 }, { 5, 7 }, 1.5, 5);
 
 
 	pushLense(lens3);
