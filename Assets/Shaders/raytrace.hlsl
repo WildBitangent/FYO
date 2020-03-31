@@ -4,7 +4,6 @@
 #define FLT_MAX 3.402823466e+38
 #define EPSILON 1e-5
 #define STACKSIZE 16
-#define RAY_PER_PIXEL 3
 
 struct Ray
 {
@@ -48,8 +47,12 @@ cbuffer Model : register(b1)
 	uint lensCount;
 	float lensIor;
 	uint raysCount;
+
 	float3 lensMinBox;
+	float lineWidth;
+	
 	float3 lensMaxBox;
+	uint chromaticAberration;
 };
 
 struct LensStruct
@@ -65,6 +68,9 @@ struct LensStruct
 	
 	float3 maxbox;
 	uint type;
+
+	float4 pad1;
+	float4 pad2;
 };
 
 //////////////////////////////////
@@ -86,6 +92,8 @@ groupshared float3 points[512];
 groupshared float3 raysMin;
 groupshared float3 raysMax;
 
+static uint index;
+
 //////////////////////////////////
 
 
@@ -106,6 +114,14 @@ float3 glassSample(in float3 rayDirection, in float3 normal, in bool rayToMat)
 {
 	float n1 = 1.0;
 	float n2 = lensIor;
+	if (chromaticAberration)
+	{
+		// red 1
+		// green 1.004088339948448
+		// blue 1.005122020713372
+		if (index == 1) n2 *= 1.004088339948448;
+		else if (index == 2) n2 *= 1.005122020713372;
+	}
 
 	// decide where do we go, inside or outside
 	float refractFactor = (rayToMat ? n1 / n2 : n2 / n1);
@@ -376,6 +392,58 @@ void traceLens(in Ray r, inout float4 outColor)
 	outColor += color * pow(0.8, state.glassHits); // TODO fix, based on real world
 }
 
+void traceChromaticLens(in Ray r, inout float4 outColor)
+{
+	float4 chromaticColor = 0.7;
+	State state; // todo this is shit
+
+	for (index = 0; index < 3; ++index)
+	{
+		state.ray = r;
+		state.hitPoint = float3(FLT_MAX, FLT_MAX, FLT_MAX);
+		state.baryCoord = float3(0, 0, 0);
+		state.glassHits = 0;
+
+		float4 color = 0.7; // color of the lens
+		float dummy;
+
+		if (rayAABBIntersection(state.ray, lensMinBox, lensMaxBox, dummy, dummy))
+		{
+			for (uint i = 0; i < lensCount; ++i)
+			{
+				uint type = lens[i].type;
+
+				if (type == 0) // biconcave
+					sphereBiconcave(state, lens[i].center1, lens[i].center2, lens[i].radius1, lens[i].radius2, lens[i].minbox, lens[i].maxbox);
+				else if (type == 1) // biconvex
+					sphereBiconvex(state, lens[i].center1, lens[i].center2, lens[i].radius1, lens[i].radius2, lens[i].minbox, lens[i].maxbox);
+				else if (type == 2) // planoconvex
+					spherePlanoConvex(state, lens[i].center1, lens[i].radius1, lens[i].minbox, lens[i].maxbox);
+			}
+		}
+
+		for (uint i = 0; i < nTrianglesPlane; i++)
+		{
+			float lastHit = FLT_MAX;
+			uint3 idx = planeIndices[i];
+
+			rayTriangleIntersection(state, planeVertices[idx.x].xyz, planeVertices[idx.y].xyz, planeVertices[idx.z].xyz, lastHit);
+
+			if (lastHit < FLT_MAX)
+			{
+				color = textureTriangle(state.baryCoord, i);
+				break;
+			}
+		}
+
+		if (index == 0)	chromaticColor.x = color.x;
+		else if (index == 1) chromaticColor.y = color.y;
+		else chromaticColor.z = color.z;
+	}
+
+	outColor += chromaticColor * pow(0.8, state.glassHits); // TODO fix, based on real world
+}
+
 void traceRays(in Ray r, inout float4 outColor)
 {
 	float dummy;
@@ -385,7 +453,7 @@ void traceRays(in Ray r, inout float4 outColor)
 		{
 			for (uint i = offsets[rc] + 1; i < offsets[rc + 1]; ++i)
 			{
-				if (rayCapsuleIntersection(r, points[i - 1], points[i], 0.025))
+				if (rayCapsuleIntersection(r, points[i - 1], points[i], lineWidth))
 					outColor = (outColor + float4(1, 0, 0, 0)) / 2;
 			}
 		}
@@ -402,7 +470,7 @@ void createRayPoints()
 
 	for (uint rc = 0; rc < raysCount; ++rc)
 	{
-		addPoint(counter, rays[rc].origin, 0.025);
+		addPoint(counter, rays[rc].origin, lineWidth);
 
 		State state;
 		state.ray = rays[rc];
@@ -425,8 +493,8 @@ void createRayPoints()
 
 			if (state.hitPoint.z < FLT_MAX)
 			{
-				addPoint(counter, state.hitPoint, 0.025);
-				addPoint(counter, state.baryCoord, 0.025);
+				addPoint(counter, state.hitPoint, lineWidth);
+				addPoint(counter, state.baryCoord, lineWidth);
 			}
 		}
 
@@ -436,11 +504,11 @@ void createRayPoints()
 			uint3 idx = planeIndices[i];
 
 			if (rayTriangleIntersection(state, planeVertices[idx.x].xyz, planeVertices[idx.y].xyz, planeVertices[idx.z].xyz, lastHit))
-				addPoint(counter, state.hitPoint, 0.025);
+				addPoint(counter, state.hitPoint, lineWidth);
 		}
 
 		if (lastHit == FLT_MAX)
-			addPoint(counter, state.ray.direction * 100000, 0.025);
+			addPoint(counter, state.ray.direction * 100000, lineWidth);
 
 		offsets[rc + 1] = counter;
 	}
@@ -457,7 +525,11 @@ void main(uint3 gid : SV_DispatchThreadID, uint tid : SV_GroupIndex)
 	float4 outColor = 0;
 	Ray ray = getPrimaryRay(gid.xy);
 	
-	traceLens(ray, outColor);
+	if (chromaticAberration)
+		traceChromaticLens(ray, outColor);
+	else 
+		traceLens(ray, outColor);
+
 	traceRays(ray, outColor);
 		
 	output[gid.xy] = outColor;

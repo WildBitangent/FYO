@@ -5,6 +5,8 @@
 #include "D3D.hpp"
 #include "Camera.hpp"
 
+class Lens;
+
 struct RayTraceStruct
 {
 	Buffer& camera;
@@ -25,4 +27,10 @@ struct RayTraceStruct
 	uni::VertexShader& vertexShader;
 	uni::PixelShader& pixelShader;
 	uni::ComputeShader& raytraceShader;
+};
+
+struct Sample
+{
+	std::string name;
+	void(*funct)(Lens&);
 };

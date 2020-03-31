@@ -15,6 +15,6 @@ public:
 private:
 	bool mHasFocus = false;
 	DirectX::XMFLOAT2 mMouseDelta = {};
-	float mSensitivity = 0.15f;
+	float mSensitivity = 0.25f;
 	
 };

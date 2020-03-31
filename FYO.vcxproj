@@ -56,7 +56,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <PreprocessorDefinitions>NOMINMAX;TINYOBJLOADER_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -72,7 +72,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <PreprocessorDefinitions>NOMINMAX;TINYOBJLOADER_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -98,6 +98,7 @@
     <ClCompile Include="Source\BVHWrapper.cpp" />
     <ClCompile Include="Source\Camera.cpp" />
     <ClInclude Include="Include\BVHWrapper.hpp" />
+    <ClInclude Include="Include\GUI.hpp" />
     <ClInclude Include="Include\Lens.hpp" />
     <ClInclude Include="Include\lodepng\lodepng.h" />
     <ClInclude Include="Include\Ray.hpp" />
@@ -115,6 +116,7 @@
       <FileType>Document</FileType>
     </ClInclude>
     <ClCompile Include="Source\D3D.cpp" />
+    <ClCompile Include="Source\GUI.cpp" />
     <ClCompile Include="Source\Input.cpp" />
     <ClCompile Include="Source\Lens.cpp" />
     <ClCompile Include="Source\LensDatabase.cpp" />
@@ -170,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Include\LensDatabase.hpp" />
+    <None Include="Include\Samples.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

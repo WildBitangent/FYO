@@ -33,6 +33,11 @@ public:
 		return mHead == mTail;
 	}
 
+	const std::array<A, N>& data()
+	{
+		return mBuffer;
+	}
+
 private:
 	std::array<A, N> mBuffer;
 	size_t mHead = 0;

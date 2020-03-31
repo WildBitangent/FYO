@@ -3,9 +3,11 @@
 #include "Constants.hpp"
 #include "Renderer.hpp"
 #include "LensDatabase.hpp"
+#include "Samples.inl"
 
 Logic::Logic()
 	: mImageModel(R"(Assets/Models/plane.obj)")
+	, mLens(mConstBufferData)
 {
 	mConstBufferData.triangleCountPlane = mImageModel.getIndexArray().size() / 3;
 
@@ -17,9 +19,8 @@ Logic::Logic()
 	mSampler = D3D::getInstance().createSampler();
 	mRenderTexture = D3D::getInstance().createBasicTexture(std::vector<uint32_t>(), {WIDTH, HEIGHT}, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE);
 
-	mLensBuffer = D3D::getInstance().createStructuredBuffer(std::vector<LensStruct>(mLensArray.size()));
+	mLensBuffer = D3D::getInstance().createStructuredBuffer(std::vector<LensStruct>(32)); // TODO: magic constant
 	mRaysBuffer = D3D::getInstance().createStructuredBuffer(std::vector<RayStruct>(mRayArray.size()));
-	//mRaysBuffer = D3D::getInstance().createStructuredBuffer(std::vector<TracedRayStruct>({ { {-1, 3, 30}, {0, 0, -1} }, { { 1, 3, 30 }, { 0, 0, -1 } } }));
 	
 	mConstantBuffer.buffer = D3D::getInstance().createBuffer(mConstBufferData, D3D11_BIND_CONSTANT_BUFFER);
 	
@@ -29,168 +30,51 @@ Logic::Logic()
 	
 	MessageBus::registerListener(this);
 
+	initSamples(mSamples);
 
-	///////////////////////////////
-	// sphereBiconcave(state, float3(0, 4, -4.5), float3(0, 4, 16.5), 10, 10, float3(-2.5, 0.5, 4.5), float3(2.5, 7.5, 7.5));
-	// spherePlanoConvex(state, float3(0, 4, 8.5), 10, float3(-2.5, 0.5, -1.5), float3(2.5, 7.5, 1.5));
-
-	auto createBiconcave = [](DirectX::XMFLOAT3 center, DirectX::XMFLOAT2 dimensions, float width, float radius1, float radius2)
-	{
-		LensStruct lense;
-		lense.type = LensType::BICONCAVE;
-		lense.radius1 = radius1;
-		lense.radius2 = radius2;
-		lense.minBox = { center.x - dimensions.x / 2, center.y - dimensions.y / 2, center.z - width };
-		lense.maxBox = { center.x + dimensions.x / 2, center.y + dimensions.y / 2, center.z + width };
-		lense.center1 = center;
-		lense.center2 = center;
-
-		lense.center1.z += radius1 + width / 2;
-		lense.center2.z -= radius2 + width / 2;
-
-		return lense;
-	};
-
-	auto createPlanoConvex = [](DirectX::XMFLOAT3 center, DirectX::XMFLOAT2 dimensions, float width, float radius)
-	{
-		LensStruct lense;
-		lense.type = LensType::PLANOCONVEX;
-		lense.radius1 = radius;
-		lense.minBox = { center.x - dimensions.x / 2, center.y - dimensions.y / 2, center.z - width / 2 };
-		lense.maxBox = { center.x + dimensions.x / 2, center.y + dimensions.y / 2, center.z + width / 2 };
-		lense.center1 = center;
-
-		lense.center1.z = radius + lense.minBox.z;
-
-		return lense;
-	};
-
-	auto createBiconvex = [](DirectX::XMFLOAT3 center, DirectX::XMFLOAT2 dimensions, float width, float radius1, float radius2)
-	{
-		LensStruct lense;
-		lense.type = LensType::BICONVEX;
-		lense.radius1 = radius1;
-		lense.radius2 = radius2;
-		lense.minBox = { center.x - dimensions.x / 2, center.y - dimensions.y / 2, center.z - width / 2 };
-		lense.maxBox = { center.x + dimensions.x / 2, center.y + dimensions.y / 2, center.z + width / 2 };
-		lense.center1 = center;
-		lense.center2 = center;
-
-		lense.center1.z = lense.maxBox.z - radius1;
-		lense.center2.z = lense.minBox.z + radius2;
-
-		return lense;
-	};
-
-
-	//LensStruct lens1 = createBiconcave({0, 4, 340}, {5, 7}, 1.5, 10, 10);
-	//LensStruct lens2 = createPlanoConvex({0, 4, 325}, {5, 7}, 2, 30);
-	//LensStruct lens3 = createBiconvex({0, 4, 6}, {5, 7}, 1.5, 10, 10);
-
-	LensStruct lens1 = createBiconvex({0, 3, 7}, {5, 7}, 1.5, 10, 10);
-	LensStruct lens2 = createBiconcave({ 0, 3, 15 }, { 5, 7 }, 1.5, 5, 5);
-	LensStruct lens3 = createPlanoConvex({ 0, 3, 25 }, { 5, 7 }, 1.5, 5);
-
-
-	pushLense(lens3);
-	pushLense(lens2);
-	pushLense(lens1);
-
+	mSamples[0].funct(mLens);
 	updateLensBuffer();
 }
 
 void Logic::update(float dt)
 {
 	mCamera.update(dt);
+	mGUI.update(mLens, mSamples);
 	submitDraw();
 }
 
 void Logic::recieveMessage(Message message)
 {
-	if (message.messageID == MessageID::INPUT_KEY)
+	if (message.messageID == ::MessageID::INPUT_KEY)
 	{
-		if (message.datai == 'B') // ray beam around
+		switch (message.datai)
 		{
-			mConstBufferData.raysCount = 0;
-			DirectX::XMFLOAT3 camPos;
-			DirectX::XMStoreFloat3(&camPos, mCamera.getBufferCPU()->position);
-
-			constexpr size_t rayCount = 10;
-			constexpr float radius = 1.5f;
-
-			for (size_t i = 0; i < rayCount; ++i)
-			{
-				float theta = (2 * DirectX::XM_PI * i) / rayCount;
-				DirectX::XMFLOAT3 origin = {
-					radius * std::sinf(theta) + camPos.x,
-					radius * std::cosf(theta) + camPos.y,
-					camPos.z
-				};
-
-				mRayArray[mConstBufferData.raysCount++] = { origin, mCamera.getDirection() };
-			}
-			updateRaysBuffer();
+		case 'B': createOrtoBeam(); mLastBeamType = 'B'; break;
+		case 'V': createCameraBeam(); mLastBeamType = 'V'; break;
+		case 'C': createParallelBeam(); mLastBeamType = 'C'; break;
 		}
-		else if (message.datai == 'V')
+	}
+	else if (message.messageID == ::MessageID::LOGIC)
+	{
+		if (message.datai == MessageID::UPDATE_CONST_BUF)
+			D3D::getInstance().updateBuffer(mConstantBuffer.buffer, &mConstBufferData);
+		else if (message.datai == MessageID::UPDATE_BEAM)
 		{
-			mConstBufferData.raysCount = 0;
-			DirectX::XMFLOAT3 origin;
-			DirectX::XMStoreFloat3(&origin, mCamera.getBufferCPU()->position);
-
-			constexpr size_t rayCount = 32;
-			constexpr float radius = 0.015f; // max 0.5
-
-			for (size_t i = 0; i < rayCount; ++i)
+			switch (mLastBeamType)
 			{
-				float theta = (2 * DirectX::XM_PI * i) / rayCount;
-
-				float x = 0.5f + radius * std::sinf(theta);
-				DirectX::XMVECTOR coordX = DirectX::XMVectorSet(x, x, x, x);
-
-				float y = 0.5f + radius * std::cosf(theta);
-				DirectX::XMVECTOR coordY = DirectX::XMVectorSet(y, y, y, y);
-
-				DirectX::XMFLOAT3 direction;
-				DirectX::XMStoreFloat3(&direction,
-					DirectX::XMVector3Normalize(
-						DirectX::XMVectorAdd(
-							mCamera.getBufferCPU()->upperLeftCorner,
-							DirectX::XMVectorSubtract(
-								DirectX::XMVectorMultiply(coordX, mCamera.getBufferCPU()->horizontal),
-								DirectX::XMVectorMultiply(coordY, mCamera.getBufferCPU()->vertical)
-							)
-						)
-					)
-				);
-
-				//if (i == 0)
-				//	origin.z -= 0.00001f * (direction.z > 0) ? 1 : -1;
-				
-				mRayArray[mConstBufferData.raysCount++] = { origin, direction };
+			case 'B': createOrtoBeam(true); break;
+			case 'V': createCameraBeam(true); break;
+			case 'C': createParallelBeam(true); break;
 			}
-			updateRaysBuffer();
 		}
+		else if (message.datai == MessageID::UPDATE_LENS)
+			updateLensBuffer();
 	}
 }
 
-void Logic::pushLense(LensStruct& lense)
+Message* Logic::recieveExpressMessage(const Message& message)
 {
-	mLensArray[mConstBufferData.lensCount++] = lense;
-}
-
-void Logic::popLense()
-{
-	mConstBufferData.lensCount = mConstBufferData.lensCount == 0 ? mConstBufferData.lensCount : mConstBufferData.lensCount - 1;
-}
-
-void Logic::clearLens()
-{
-	mConstBufferData.lensCount = 0;
-}
-
-LensStruct& Logic::getLense(size_t index)
-{
-	return mLensArray[index];
+	return nullptr;
 }
 
 void Logic::submitDraw()
@@ -211,37 +95,37 @@ void Logic::submitDraw()
 		mRaytraceShader
 	};
 
-	Message msg;
-	msg.messageID = MessageID::DRAW_RT;
-	msg.datap = rt;
-
-	MessageBus::post(msg);
+	MessageBus::post({ ::MessageID::DRAW_RT, {.datap = rt } });
+	MessageBus::post({ ::MessageID::DRAW_GUI, {.datap = &mGUI } });
 }
 
 void Logic::updateLensBuffer()
 {
-	D3D::getInstance().updateBuffer(mLensBuffer.buffer, mLensArray.data());
+	D3D::getInstance().updateBuffer(mLensBuffer.buffer, mLens.data().data());
 
-	mConstBufferData.lensMinBox = mLensArray[0].minBox;
-	mConstBufferData.lensMaxBox = DirectX::XMFLOAT3A(reinterpret_cast<float*>(&mLensArray[0].maxBox));
-
-	// create AABB
-	for (size_t i = 1; i < mConstBufferData.lensCount; ++i)
+	if (!mLens.data().empty())
 	{
-		auto min = [](auto& a, auto& b) {
-			a.x = (a.x < b.x ? a.x : b.x);
-			a.y = (a.y < b.y ? a.y : b.y);
-			a.z = (a.z < b.z ? a.z : b.z);
-		};
+		mConstBufferData.lensMinBox = mLens.data().begin()->minBox;
+		mConstBufferData.lensMaxBox = DirectX::XMFLOAT3A(reinterpret_cast<float*>(&mLens.data().begin()->maxBox));
 
-		auto max = [](auto& a, auto& b) {
-			a.x = (a.x > b.x ? a.x : b.x);
-			a.y = (a.y > b.y ? a.y : b.y);
-			a.z = (a.z > b.z ? a.z : b.z);
-		};
+		// create AABB
+		for (size_t i = 1; i < mConstBufferData.lensCount; ++i)
+		{
+			auto min = [](auto& a, auto& b) {
+				a.x = (a.x < b.x ? a.x : b.x);
+				a.y = (a.y < b.y ? a.y : b.y);
+				a.z = (a.z < b.z ? a.z : b.z);
+			};
 
-		min(mConstBufferData.lensMinBox, mLensArray[i].minBox);
-		max(mConstBufferData.lensMaxBox, mLensArray[i].maxBox);
+			auto max = [](auto& a, auto& b) {
+				a.x = (a.x > b.x ? a.x : b.x);
+				a.y = (a.y > b.y ? a.y : b.y);
+				a.z = (a.z > b.z ? a.z : b.z);
+			};
+
+			min(mConstBufferData.lensMinBox, mLens.data()[i].minBox);
+			max(mConstBufferData.lensMaxBox, mLens.data()[i].maxBox);
+		}
 	}
 	
 	D3D::getInstance().updateBuffer(mConstantBuffer.buffer, &mConstBufferData);
@@ -251,4 +135,122 @@ void Logic::updateRaysBuffer()
 {
 	D3D::getInstance().updateBuffer(mRaysBuffer.buffer, mRayArray.data());
 	D3D::getInstance().updateBuffer(mConstantBuffer.buffer, &mConstBufferData);
+}
+
+void Logic::createOrtoBeam(bool update)
+{
+	static DirectX::XMFLOAT3 lastCamPos;
+	static DirectX::XMFLOAT3 lastDirection;
+
+	mConstBufferData.raysCount = 0;
+	DirectX::XMFLOAT3 camPos;
+	DirectX::XMFLOAT3 direction;
+
+	if (update)
+	{
+		camPos = lastCamPos;
+		direction = lastDirection;
+	}
+	else
+	{
+		DirectX::XMStoreFloat3(&camPos, mCamera.getBufferCPU()->position);
+		direction = mCamera.getDirection();
+	}
+
+	for (size_t i = 0; i < mGUI.mBeamCount; ++i)
+	{
+		float theta = (2 * DirectX::XM_PI * i) / mGUI.mBeamCount;
+		DirectX::XMFLOAT3 origin = {
+			mGUI.mBeamRadius * std::sinf(theta) + camPos.x,
+			mGUI.mBeamRadius * std::cosf(theta) + camPos.y,
+			camPos.z
+		};
+
+		mRayArray[mConstBufferData.raysCount++] = { origin, direction };
+	}
+	updateRaysBuffer();
+	
+	if (!update)
+	{
+		lastCamPos = camPos;
+		lastDirection = mCamera.getDirection();
+	}
+}
+
+void Logic::createCameraBeam(bool update)
+{
+	static Camera::CameraBuffer lastCamera;
+
+	mConstBufferData.raysCount = 0;
+	DirectX::XMFLOAT3 origin;
+
+	DirectX::XMStoreFloat3(&origin, (update ? lastCamera.position : mCamera.getBufferCPU()->position));
+
+	float radius = 1.f - std::expf(0.01f * mGUI.mBeamRadius);
+	for (size_t i = 0; i < mGUI.mBeamCount; ++i)
+	{
+		float theta = (2 * DirectX::XM_PI * i) / mGUI.mBeamCount;
+
+		float x = 0.5f + radius * std::sinf(theta);
+		DirectX::XMVECTOR coordX = DirectX::XMVectorSet(x, x, x, x);
+
+		float y = 0.5f + radius * std::cosf(theta);
+		DirectX::XMVECTOR coordY = DirectX::XMVectorSet(y, y, y, y);
+
+		DirectX::XMFLOAT3 direction;
+		DirectX::XMStoreFloat3(&direction,
+			DirectX::XMVector3Normalize(
+				DirectX::XMVectorAdd(
+					(update ? lastCamera.upperLeftCorner : mCamera.getBufferCPU()->upperLeftCorner),
+					DirectX::XMVectorSubtract(
+						DirectX::XMVectorMultiply(coordX, (update ? lastCamera.horizontal : mCamera.getBufferCPU()->horizontal)),
+						DirectX::XMVectorMultiply(coordY, (update ? lastCamera.vertical : mCamera.getBufferCPU()->vertical))
+					)
+				)
+			)
+		);
+
+		mRayArray[mConstBufferData.raysCount++] = { origin, direction };
+	}
+	updateRaysBuffer();
+
+	if (!update)
+		lastCamera = *mCamera.getBufferCPU();
+}
+
+void Logic::createParallelBeam(bool update)
+{
+	static DirectX::XMFLOAT3 lastCamPos;
+	static DirectX::XMFLOAT3 lastDirection;
+
+	mConstBufferData.raysCount = 0;
+	DirectX::XMFLOAT3 camPos;
+	DirectX::XMFLOAT3 direction;
+
+	if (update)
+	{
+		camPos = lastCamPos;
+		direction = lastDirection;
+	}
+	else
+	{
+		DirectX::XMStoreFloat3(&camPos, mCamera.getBufferCPU()->position);
+		direction = mCamera.getDirection();
+	}
+
+	float start = camPos.y - (mGUI.mBeamRadius);
+	float offset = (mGUI.mBeamRadius * 2) / (mGUI.mBeamCount - 1);
+	for (size_t i = 0; i < mGUI.mBeamCount; ++i)
+	{
+		mRayArray[mConstBufferData.raysCount++] = { { camPos.x, start + offset, camPos.z }, direction };
+		start += offset;
+	}
+	updateRaysBuffer();
+
+	if (!update)
+	{
+		lastCamPos = camPos;
+		lastDirection = mCamera.getDirection();
+	}
+
 }

@@ -25,6 +25,7 @@ public:
 	void update(float dt);
 
 	void recieveMessage(Message message) override;
+	Message* recieveExpressMessage(const Message& message) override;
 
 	CameraBuffer* getBufferCPU();
 	Buffer& getBufferGPU();

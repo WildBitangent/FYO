@@ -3,6 +3,7 @@
 #include "Renderer.hpp"
 #include "Constants.hpp"
 #include "fmt.h"
+#include "GUI.hpp"
 
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>
@@ -79,30 +80,35 @@ void Renderer::init(HWND hwnd, Resolution resolution)
 
 	mContext->RSSetViewports(1, &viewport);
 
+	mHwnd = hwnd;
+
 	D3D::getInstance().Init(mDevice, mContext);
 	MessageBus::registerListener(this);
 }
 
 void Renderer::recieveMessage(Message message)
 {
-	if (message.messageID == MessageID::DRAW)
+	if (message.messageID == MessageID::DRAW_GUI)
 	{
-		
+		reinterpret_cast<LensGUI*>(message.datap)->render();
 	}
-
 	else if (message.messageID == MessageID::DRAW_RT)
 	{
 		auto data = reinterpret_cast<RayTraceStruct*>(message.datap);
 		draw(*data);
 		delete data;
 	}
+}
 
-	else if (message.messageID == MessageID::UPDATE_BUFFER)
+Message* Renderer::recieveExpressMessage(const Message& message)
+{
+	if (message.messageID == MessageID::GUI_INIT)
 	{
-		auto data = reinterpret_cast<std::pair<Camera::CameraBuffer&, Buffer&>*>(message.datap);
-		mContext->UpdateSubresource(data->second.buffer, 0, nullptr, &data->first, 0, 0);
-		delete data; // todo refactor this ugly shit code!!!!!!!!!
+		reinterpret_cast<LensGUI*>(message.datap)->init(mHwnd, mDevice, mContext);
+		return const_cast<Message*>(&message); // just to stop the sender recursion
 	}
+
+	return nullptr;
 }
 
 void Renderer::update(float dt)

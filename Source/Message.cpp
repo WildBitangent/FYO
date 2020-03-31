@@ -20,7 +20,6 @@ void MessageBus::dispatch()
 
 void MessageBus::registerListener(Listener* listener)
 {
-	// to
 	mInstance.mListeners.emplace_back(listener);
 }
 
@@ -35,4 +34,11 @@ void MessageBus::unregister(Listener* listener)
 			break;
 		}
 	}
+}
+
+Message* MessageBus::postExpress(const Message& msg)
+{
+	for (auto& l : mInstance.mListeners)
+		if (auto message = l->recieveExpressMessage(msg); message)
+			return message;
 }

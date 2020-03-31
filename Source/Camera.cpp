@@ -71,16 +71,17 @@ void Camera::update(float dt)
 	mBufferCPU.upperLeftCorner = -mHalfWidth * left + mHalfHeight * up - w;
 	mBufferCPU.horizontal = 2 * mHalfWidth * left;
 	mBufferCPU.vertical = 2 * mHalfHeight * up;
-
-	Message msg;
-	msg.messageID = MessageID::UPDATE_BUFFER;
-	msg.datap = new std::pair<Camera::CameraBuffer&, Buffer&>(mBufferCPU, mBufferGPU);
-
-	MessageBus::post(msg);
+	
+	D3D::getInstance().updateBuffer(mBufferGPU.buffer, &mBufferCPU);
 }
 
 void Camera::recieveMessage(Message message)
 {
+}
+
+Message* Camera::recieveExpressMessage(const Message& message)
+{
+	return nullptr;
 }
 
 Camera::CameraBuffer* Camera::getBufferCPU()

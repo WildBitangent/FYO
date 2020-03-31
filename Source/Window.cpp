@@ -14,6 +14,9 @@ extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam
 
 Window::Window(HINSTANCE hInstance, Resolution res, bool windowed, const std::string& name)
 {	
+	RECT rect = { 0, 0, res.first, res.second };
+	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
+
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -34,8 +37,8 @@ Window::Window(HINSTANCE hInstance, Resolution res, bool windowed, const std::st
 		name.c_str(),
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT,
-		res.first,
-		res.second,
+		rect.right - rect.left,
+		rect.bottom - rect.top,
 		nullptr,
 		nullptr,
 		hInstance,
@@ -60,7 +63,7 @@ void Window::loop()
 	renderer.init(mHwnd, {WIDTH, HEIGHT});
 
 	Logic gameLogic;
-	
+
 	for (MSG msg;;)
 	{
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -76,7 +79,7 @@ void Window::loop()
 			auto currentTime = clock::now();
 			auto deltaTime = currentTime - timeStart;
 
-			if (std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime).count() > 2)
+			if (std::chrono::duration_cast<std::chrono::duration<double	, std::milli>>(deltaTime).count() > 1000.0 / 144.0)
 			{
 				timeStart = currentTime;
 

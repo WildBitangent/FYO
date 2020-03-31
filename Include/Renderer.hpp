@@ -24,6 +24,7 @@ public:
 
 	// virtual ~Renderer() = default;
 	void recieveMessage(Message message) override;
+	Message* recieveExpressMessage(const Message& message) override;
 	void init(HWND hwnd, Resolution resolution);
 
 
@@ -35,8 +36,9 @@ private:
 	// Camera mCamera;
 	// ModelManager mModel;
 	// uint32_t mNumIndices;
-	
 
+	HWND mHwnd;
+	
 	uni::Swapchain mSwapChain;
 	uni::Device mDevice;
 	uni::DeviceContext mContext;
