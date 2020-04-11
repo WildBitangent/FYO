@@ -9,24 +9,21 @@
 #include "Message.hpp"
 #include <string>
 
-
 class Renderer : public Listener
 {
 	using Resolution = DirectX::XMUINT2;
 public:
 	Renderer() = default;
+	~Renderer();
 	Renderer(Renderer&) = delete;
 	Renderer(Renderer&&) = delete;
 	Renderer& operator=(Renderer&) = delete;
 	Renderer& operator=(Renderer&&) = delete;
 
-	static Renderer& getInstance();
-
 	// virtual ~Renderer() = default;
 	void recieveMessage(Message message) override;
 	Message* recieveExpressMessage(const Message& message) override;
 	void init(HWND hwnd, Resolution resolution);
-
 
 	void update(float dt);
 	void draw(RayTraceStruct& rayStruct);
@@ -39,9 +36,9 @@ private:
 
 	HWND mHwnd;
 	
-	uni::Swapchain mSwapChain;
 	uni::Device mDevice;
 	uni::DeviceContext mContext;
+	uni::Swapchain mSwapChain;
 	uni::RenderTargetView mRenderTarget;
 	
 	// uni::VertexShader mVertexShader;

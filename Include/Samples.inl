@@ -16,4 +16,14 @@ void initSamples(std::vector<Sample>& samples)
 			lens.create(LensStruct{.radius1 = 10.f, .radius2 = 10.f, .type = LensType::BICONVEX, .center = { 0, 3, 7 }, .width = 1.5f, .dimensions = { 5, 7 } });
 		}
 	});
+
+	samples.emplace_back(Sample{
+		"Telescope",
+		[](Lens& lens) {
+			lens.clear();
+			lens.create(LensStruct{.radius1 = 10.f, .radius2 = 10.f, .type = LensType::BICONVEX, .center = { 0, 3, 450 }, .width = 1.f, .dimensions = { 7, 7 } });
+			lens.create(LensStruct{.radius1 = 100.f, .radius2 = 20.f, .type = LensType::BICONVEX, .center = { 0, 3, 430 }, .width = 1.5f, .dimensions = { 7, 7 } });
+			lens.create(LensStruct{.radius1 = 100.f, .radius2 = 100.f, .type = LensType::BICONVEX, .center = { 0, 3, 423 }, .width = 0.5f, .dimensions = { 7, 7 } });
+		}
+	});
 }

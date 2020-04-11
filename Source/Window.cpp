@@ -59,7 +59,7 @@ void Window::loop()
 	auto timeStart = clock::now();
 
 	
-	Renderer& renderer = Renderer::getInstance();
+	Renderer renderer;
 	renderer.init(mHwnd, {WIDTH, HEIGHT});
 
 	Logic gameLogic;

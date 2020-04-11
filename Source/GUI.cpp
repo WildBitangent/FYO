@@ -60,10 +60,10 @@ void LensGUI::update(Lens& lens, const std::vector<Sample>& samples)
 
 		////////////////////// Settings //////////////////////
 		{
-			if (ImGui::DragInt("Ortogonal Beam Rays Count", reinterpret_cast<int*>(&mBeamCount), 0.05f, 3, 32))// TODO is this really ortogonal
+			if (ImGui::DragInt("Beam Rays Count", reinterpret_cast<int*>(&mBeamCount), 0.05f, 3, 32))// TODO is this really ortogonal
 				MessageBus::post({ MessageID::LOGIC, Logic::MessageID::UPDATE_BEAM });
 
-			if (ImGui::DragFloat("Ortogonal Beam Radius", &mBeamRadius, 0.01f, 0.025f, 10.f)) // TODO is this really ortogonal
+			if (ImGui::DragFloat("Beam Radius", &mBeamRadius, 0.01f, 0.025f, 10.f)) // TODO is this really ortogonal
 				MessageBus::post({ MessageID::LOGIC, Logic::MessageID::UPDATE_BEAM });
 
 			//if (ImGui::DragInt("Camera Beam Rays Count", reinterpret_cast<int*>(&mRaysCount), 0.05f, 3, 32))
@@ -81,6 +81,14 @@ void LensGUI::update(Lens& lens, const std::vector<Sample>& samples)
 			ImGui::SameLine();
 			if (ImGui::Checkbox("Chromatic Aberration", reinterpret_cast<bool*>(&lens.getConstBuff().chromaticAberration)))
 				MessageBus::post({ MessageID::LOGIC, Logic::MessageID::UPDATE_CONST_BUF });
+		}
+		ImGui::Separator();
+
+		////////////////////// CAMERA POS //////////////////////
+		{
+			float* campos = reinterpret_cast<float*>(MessageBus::postExpress({ MessageID::CAMERA_POS, 0 }));
+			if (campos)
+				ImGui::InputFloat3("Camera Position", campos, 2);
 		}
 		ImGui::Separator();
 

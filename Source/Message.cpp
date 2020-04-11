@@ -41,4 +41,6 @@ Message* MessageBus::postExpress(const Message& msg)
 	for (auto& l : mInstance.mListeners)
 		if (auto message = l->recieveExpressMessage(msg); message)
 			return message;
+	
+	return nullptr;
 }

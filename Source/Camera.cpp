@@ -10,6 +10,7 @@ Camera::Camera()
 	updateResolution(WIDTH, HEIGHT);
 
 	mBufferGPU.buffer = D3D::getInstance().createBuffer(mBufferCPU, D3D11_BIND_CONSTANT_BUFFER);
+	MessageBus::registerListener(this);
 }
 
 void Camera::updateResolution(size_t width, size_t height)
@@ -81,6 +82,9 @@ void Camera::recieveMessage(Message message)
 
 Message* Camera::recieveExpressMessage(const Message& message)
 {
+	if (message.messageID == MessageID::CAMERA_POS)
+		return reinterpret_cast<Message*>(&mBufferCPU.position);
+
 	return nullptr;
 }
 

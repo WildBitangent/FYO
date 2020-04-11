@@ -8,6 +8,7 @@ enum class MessageID : size_t
 	DRAW_RT,
 	INPUT_KEY,
 	GUI_INIT,
+	CAMERA_POS,
 
 	// Module specific messages // TODO maybe not
 	LOGIC,
