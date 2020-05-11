@@ -58,7 +58,7 @@ void Window::loop()
 	
 	auto timeStart = clock::now();
 
-	
+
 	Renderer renderer;
 	renderer.init(mHwnd, {WIDTH, HEIGHT});
 

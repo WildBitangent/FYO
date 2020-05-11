@@ -15,6 +15,11 @@
 
 using namespace DirectX;
 
+extern "C"
+{
+	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
 
 void Renderer::init(HWND hwnd, Resolution resolution)
 {
@@ -37,15 +42,15 @@ void Renderer::init(HWND hwnd, Resolution resolution)
 	swapChainDesc.Windowed = true;
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-	IDXGIFactory2* pFactory;
-	CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, __uuidof(IDXGIFactory), reinterpret_cast<void**>(&pFactory));
-	auto factory6 = reinterpret_cast<IDXGIFactory6*>(pFactory);
+	//IDXGIFactory2* pFactory;
+	//CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, __uuidof(IDXGIFactory), reinterpret_cast<void**>(&pFactory));
+	//auto factory6 = reinterpret_cast<IDXGIFactory6*>(pFactory);
 
-	IDXGIAdapter* adapter;
-	factory6->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
-	pFactory->Release();
+	//IDXGIAdapter* adapter;
+	//factory6->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter));
+	//pFactory->Release();
 
-	if (const auto result = D3D11CreateDeviceAndSwapChain(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0/*D3D11_CREATE_DEVICE_DEBUG*/, nullptr, 0,
+	if (const auto result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0/*D3D11_CREATE_DEVICE_DEBUG*/, nullptr, 0,
 		D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mDevice, nullptr, &mContext); result != S_OK)
 		throw std::runtime_error(fmt::format("Failed to create device with Swapchain. ERR: {}", result));
 
