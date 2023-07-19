@@ -1,5 +1,5 @@
 # Introduction
-A lens visualizer for the Physical Optics class. \
+A lens visualizer for the Physical Optics class. Accompanying text in Czech can be found in [Thesis.pdf](Thesis.pdf) \
 Created using C++, DX11.
 
 ![image](https://github.com/WildBitangent/FYO/assets/7337468/00cfdb68-6ea1-4bda-aa22-29c6acac49db)
