@@ -2,6 +2,9 @@
 A lens visualizer for the Physical Optics class. \
 Created using C++, DX11.
 
+![image](https://github.com/WildBitangent/FYO/assets/7337468/00cfdb68-6ea1-4bda-aa22-29c6acac49db)
+
+
 ## Magnifying set
 ![image](https://github.com/WildBitangent/FYO/assets/7337468/ba51ee6c-03c1-461b-8299-8fc44183d8c8)
 ![image](https://github.com/WildBitangent/FYO/assets/7337468/a0439f1b-ee8c-44ad-974a-8453561d587a)
